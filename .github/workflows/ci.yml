@@ -38,18 +38,18 @@ jobs:
         env:
           AUTHENTICATOR_DNS: ./token
 
-      - name: Run integration tests
-        run: pytest server/tests/integration --cov-config=.github/workflows/integration.coveragerc --cov=server --cov-report term-missing
-        env:
-          AUTHENTICATOR_DNS: ./token
-          TEST_DB_HOST: localhost
-          TEST_DB_USER: postgres
-          TEST_DB_PASS: 1234
-          TEST_DB_NAME: postgres
-          TEST_DB_PORT: 5432
-          MIGRATION_DB_HOST: localhost
-          MIGRATION_DB_USER: postgres
-          MIGRATION_DB_PASS: 1234
-          MIGRATION_DB_NAME: postgres
-          MIGRATION_DB_PORT: 5432
+#      - name: Run integration tests
+#        run: pytest server/tests/integration --cov-config=.github/workflows/integration.coveragerc --cov=server --cov-report term-missing
+#        env:
+#          AUTHENTICATOR_DNS: ./token
+#          TEST_DB_HOST: localhost
+#          TEST_DB_USER: postgres
+#          TEST_DB_PASS: 1234
+#          TEST_DB_NAME: postgres
+#          TEST_DB_PORT: 5432
+#          MIGRATION_DB_HOST: localhost
+#          MIGRATION_DB_USER: postgres
+#          MIGRATION_DB_PASS: 1234
+#          MIGRATION_DB_NAME: postgres
+#          MIGRATION_DB_PORT: 5432
 
