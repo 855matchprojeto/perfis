@@ -17,3 +17,4 @@ omit =
     */server/dependencies/get_environment_cached.py
     */server/dependencies/get_email_sender_service_cached.py
     */server/controllers/ping_controller.py
+    */server/controllers/__init__.py
