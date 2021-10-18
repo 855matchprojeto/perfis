@@ -1,0 +1,17 @@
+# .coveragerc to control coverage.py
+[run]
+source = server
+omit =
+    */server/tests/*
+    */server/configuration/*
+    */server/models/*
+    */server/controllers/*
+    */server/middleware/*
+    */server/schemas/*
+    */server/main.py
+    */server/asgi.py
+    */server/__init__.py
+    */server/constants/*
+    */server/templates/*
+    */server/repository/*
+    */server/dependencies/*
