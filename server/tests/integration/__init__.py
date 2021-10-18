@@ -16,6 +16,7 @@ from sqlalchemy.orm import sessionmaker
 from fastapi.testclient import TestClient
 from mock import Mock
 from fastapi import FastAPI
+from sqlalchemy.pool import NullPool
 
 
 @lru_cache
@@ -33,7 +34,7 @@ def create_test_async_engine():
             db_pass=environment.TEST_DB_PASS,
             db_user=environment.TEST_DB_USER
         ),
-        pool_size=0
+        poolclass=NullPool
     )
 
 
@@ -58,6 +59,7 @@ async def get_test_async_session():
     session_maker = build_test_async_session_maker()
     async with session_maker() as session:
         yield session
+        session.close()
 
 
 @pytest.fixture
