@@ -23,9 +23,9 @@ def get_test_environment_cached():
     return IntegrationTestEnvironment()
 
 
-async def create_test_async_engine():
+def create_test_async_engine():
     environment = get_test_environment_cached()
-    engine = create_async_engine(
+    return create_async_engine(
         environment.get_db_conn_async(
             db_host=environment.TEST_DB_HOST,
             db_name=environment.TEST_DB_NAME,
@@ -35,10 +35,6 @@ async def create_test_async_engine():
         ),
         pool_size=0
     )
-
-    yield engine
-
-    await engine.dispose()
 
 
 def build_test_async_session_maker():
@@ -62,7 +58,6 @@ async def get_test_async_session():
     session_maker = build_test_async_session_maker()
     async with session_maker() as session:
         yield session
-        await session.close()
 
 
 @pytest.fixture
