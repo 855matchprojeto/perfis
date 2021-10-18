@@ -10,7 +10,7 @@ from server.configuration.environment import AuthEnvironment
 import pathlib
 
 environment = AuthEnvironment(
-    _env_file=f"{str(pathlib.Path(__file__).parents[2])}/.env/PROJETOS.env",
+    _env_file=f"{str(pathlib.Path(__file__).parents[2])}/.env/PERFIS.env",
     _env_file_encoding="utf-8"
 )
 

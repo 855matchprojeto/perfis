@@ -72,7 +72,7 @@ async def db_docker_container():
         image='postgres',
         auto_remove=True,
         detach=True,
-        name="db_mc855_projetos",
+        name="db_mc855_perfis",
         ports={
             "5432/tcp": environment.TEST_DB_PORT
         },

@@ -35,7 +35,7 @@ class Environment(BaseSettings):
         return re.sub(r'\bpostgres://\b', "postgresql://", database_url, count=1)
 
     class Config:
-        env_file = '.env/PROJETOS.env'
+        env_file = '.env/PERFIS.env'
         env_file_encoding = 'utf-8'
 
 
@@ -58,7 +58,7 @@ class IntegrationTestEnvironment(BaseSettings):
         return f"postgresql+asyncpg://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"
 
     class Config:
-        env_file = '.env/PROJETOS_TEST.env'
+        env_file = '.env/PERFIS_TEST.env'
         env_file_encoding = 'utf-8'
 
 
@@ -81,7 +81,7 @@ class MigrationEnvironment(BaseSettings):
         return f"postgresql+asyncpg://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"
 
     class Config:
-        env_file = '.env/PROJETOS_MIGRATION.env'
+        env_file = '.env/PERFIS_MIGRATION.env'
         env_file_encoding = 'utf-8'
 
 
@@ -94,6 +94,6 @@ class AuthEnvironment(BaseSettings):
     AUTHENTICATOR_DNS: str
 
     class Config:
-        env_file = '.env/PROJETOS_AUTH.env'
+        env_file = '.env/PERFIS_AUTH.env'
         env_file_encoding = 'utf-8'
 
