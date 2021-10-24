@@ -8,6 +8,7 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy import and_
 from server.models.perfil_model import Perfil
 from server.models.vinculo_perfil_interesse_model import VinculoPerfilInteresse
+from server.models.vinculo_perfil_curso_model import VinculoPerfilCurso
 from server.models.interesse_model import Interesse
 from server.schemas.cursor_schema import Cursor
 from jose import JWTError, jwt
@@ -55,13 +56,14 @@ class PerfilRepository:
             filters.append(PerfilRepository.build_cursor_filter(cursor))
 
         stmt = (
-            select(Perfil, VinculoPerfilInteresse).
+            select(Perfil, VinculoPerfilInteresse, VinculoPerfilCurso).
             options(
                 selectinload(Perfil.vinculos_perfil_curso),
                 selectinload(Perfil.vinculos_perfil_interesse),
                 selectinload(Perfil.profile_phones),
                 selectinload(Perfil.profile_emails),
-                selectinload(VinculoPerfilInteresse.interesse)
+                selectinload(VinculoPerfilInteresse.interesse),
+                selectinload(VinculoPerfilCurso.curso)
             ).
             where(*filters).
             limit(limit + 1)

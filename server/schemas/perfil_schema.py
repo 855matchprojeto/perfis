@@ -7,6 +7,8 @@ from fastapi import Query
 from uuid import UUID as GUID
 from server.schemas.interesse_schema import InteresseOutput
 from server.schemas.curso_schema import CursoOutput
+from server.schemas.perfil_phone_schema import PerfilPhoneOutput
+from server.schemas.perfil_email_schema import PerfilEmailOutput
 from typing import Any, Optional, Literal
 
 
@@ -31,6 +33,8 @@ class PerfilOutput(BaseModel):
     bio: Optional[str] = Field(example='Texto de apresentação do usuário')
     interesses: List[InteresseOutput]
     cursos: List[CursoOutput]
+    phones: List[PerfilPhoneOutput]
+    emails: List[PerfilEmailOutput]
 
     class Config:
         orm_mode = True
