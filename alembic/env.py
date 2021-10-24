@@ -30,7 +30,15 @@ fileConfig(config.config_file_name)
 
 from server.models import (
     permissao_model,
-    vinculo_permissao_funcao_model
+    vinculo_permissao_funcao_model,
+    curso_model,
+    interesse_model,
+    perfil_model,
+    perfil_email_model,
+    perfil_phone_model,
+    tipo_contato_model,
+    vinculo_perfil_interesse_model,
+    vinculo_perfil_curso_model
 )
 
 

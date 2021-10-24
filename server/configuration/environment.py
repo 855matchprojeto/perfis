@@ -26,6 +26,9 @@ class Environment(BaseSettings):
     ACCESS_TOKEN_SECRET_KEY: str
     ACCESS_TOKEN_ALGORITHM: str
 
+    CURSOR_TOKEN_SECRET_KEY: str
+    CURSOR_TOKEN_ALGORITHM: str
+
     @staticmethod
     def get_db_conn_async(database_url: str):
         return re.sub(r'\bpostgres://\b', "postgresql+asyncpg://", database_url, count=1)
