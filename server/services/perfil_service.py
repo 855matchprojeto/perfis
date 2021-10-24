@@ -42,6 +42,22 @@ class PerfilService:
                 filters.append(filter_factory[key](param))
         return filters
 
+    @staticmethod
+    def handle_profile_body(perfil: Perfil):
+        perfil.interesses = [
+            x.interesse for x in perfil.vinculos_perfil_interesse
+        ]
+        perfil.cursos = [
+            x.curso for x in perfil.vinculos_perfil_curso
+        ]
+        return perfil
+
+    @staticmethod
+    def handle_profile_body_list(perfil_list: List[Perfil]):
+        for perfil in perfil_list:
+            PerfilService.handle_profile_body(perfil)
+        return perfil_list
+
     def __init__(self, perfil_repo: Optional[PerfilRepository] = None, environment: Optional[Environment] = None):
         self.perfil_repo = perfil_repo
         self.environment = environment
@@ -59,6 +75,6 @@ class PerfilService:
         decoded_cursor = self.decode_cursor_info(cursor) if cursor else None
         x = await self.perfil_repo.find_profiles_by_filters_paginated(limit, decoded_cursor, filters)
         x['previous_cursor'] = cursor
+        x['items'] = self.handle_profile_body_list(x['items'])
         return x
-
 

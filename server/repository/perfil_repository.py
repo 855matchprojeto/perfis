@@ -15,9 +15,26 @@ from jose import JWTError, jwt
 
 class PerfilRepository:
 
-    CURSOR_TYPE_HANDLER = {
-        "int": int
-    }
+    @staticmethod
+    def get_int_cursor_filter(sort_field_key, cursor_value):
+        return getattr(Perfil, sort_field_key) >= int(cursor_value)
+
+    @staticmethod
+    def get_cursor_filter_factory():
+        return {
+            "int": PerfilRepository.get_int_cursor_filter
+        }
+
+    @staticmethod
+    def build_cursor_filter(cursor: Cursor):
+        # Factory e builder descrevem como construir o filtro
+        cursor_field_factory = PerfilRepository.get_cursor_filter_factory()
+        cursor_field_type = cursor.sort_field_type
+        cursor_field_builder = cursor_field_factory[cursor_field_type]
+        # Retornando o resultado usando o builder com os argumentos
+        cursor_field_key = cursor.sort_field_key
+        cursor_value = cursor.value
+        return cursor_field_builder(cursor_field_key, cursor_value)
 
     def __init__(self, db_session: AsyncSession, environment: Optional[Environment] = None):
         self.db_session = db_session
@@ -30,26 +47,20 @@ class PerfilRepository:
             algorithm=self.environment.CURSOR_TOKEN_ALGORITHM
         )
 
-    def handle_cursor_type(self, cursor: Cursor):
-        cursor_type = cursor.sort_field_type
-        cursor_value = cursor.value
-        return PerfilRepository.CURSOR_TYPE_HANDLER[cursor_type](cursor_value)
-
     async def find_profiles_by_filters_paginated(self, limit, cursor: Cursor, filters) -> dict:
 
         # Offset a partir do cursor, geralmente é pelo ID
         # Limit + 1 para capturar o ultimo perfil. Esse último perfil será usado no cursor
         if cursor:
-            cursor_value = self.handle_cursor_type(cursor)
-            filters.append(getattr(Perfil, cursor.sort_field_key) >= cursor_value)
+            filters.append(PerfilRepository.build_cursor_filter(cursor))
 
         stmt = (
             select(Perfil, VinculoPerfilInteresse).
             options(
                 selectinload(Perfil.vinculos_perfil_curso),
                 selectinload(Perfil.vinculos_perfil_interesse),
-                selectinload(Perfil.entidade_phone),
-                selectinload(Perfil.entidade_email),
+                selectinload(Perfil.profile_phones),
+                selectinload(Perfil.profile_emails),
                 selectinload(VinculoPerfilInteresse.interesse)
             ).
             where(*filters).
@@ -58,21 +69,21 @@ class PerfilRepository:
 
         # Executando a query
         query = await self.db_session.execute(stmt)
+
         perfis = query.scalars().all()
 
+        # Capturando o ultimo perfil e setando o next_cursor
         next_cursor = None
         if len(perfis) == (limit+1):
             last_profile = perfis[limit]
             next_cursor = {
-                'sort_field_key': 'id',
-                'sort_field_type': 'int',
+                'sort_field_key': cursor.sort_field_key if cursor else 'id',
+                'sort_field_type': cursor.sort_field_type if cursor else 'int',
                 'value': last_profile.id
             }
 
-        # Capturando o ultimo perfil
         return {
             "items": perfis[:limit],
             "next_cursor": self.encode_cursor(next_cursor) if next_cursor else None,
         }
-
 

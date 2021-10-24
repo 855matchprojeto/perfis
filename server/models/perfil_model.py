@@ -25,19 +25,17 @@ class Perfil(db.Base, AuthenticatorBase):
     bio = Column(String())
     nome_exibicao = Column(String())
 
-    id_entidade_email = Column(BigInteger, ForeignKey("tb_perfil_email.id"))
-    entidade_email = relationship(
+    profile_emails = relationship(
         "PerfilEmail",
         primaryjoin=(
-            id_entidade_email == PerfilEmail.id
+            id == PerfilEmail.id_perfil
         )
     )
 
-    id_entidade_phone = Column(BigInteger, ForeignKey("tb_perfil_phone.id"))
-    entidade_phone = relationship(
+    profile_phones = relationship(
         "PerfilPhone",
         primaryjoin=(
-            id_entidade_phone == PerfilPhone.id
+            id == PerfilPhone.id_perfil
         )
     )
 

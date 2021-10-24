@@ -15,6 +15,7 @@ from server.controllers import pagination_parameters
 from server.services.perfil_service import PerfilService
 from server.configuration.environment import Environment
 from server.repository.perfil_repository import PerfilRepository
+from server.schemas.perfil_schema import PaginatedPerfilOutput
 
 
 async def all_profiles_query_params(
@@ -37,7 +38,7 @@ perfil_router = dict(
 
 @router.get(
     "",
-    response_model=dict,
+    response_model=PaginatedPerfilOutput,
     summary='Retorna todos os perfis a partir de filtros contidos na query string',
     response_description='Retorna todos os perfis a partir de filtros contidos na query string',
     responses={
