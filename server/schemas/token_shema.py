@@ -1,4 +1,4 @@
-from server.schemas import AuthenticatorModelInput, AuthenticatorModelOutput
+from server.schemas import PerfilModelOutput, PerfilModelInput
 from uuid import UUID as GUID
 from pydantic import Field
 from datetime import datetime
@@ -6,7 +6,7 @@ from pydantic import BaseModel, EmailStr
 from typing import List
 
 
-class AccessTokenOutput(AuthenticatorModelOutput):
+class AccessTokenOutput(PerfilModelOutput):
 
     access_token: str
     expires_in: int

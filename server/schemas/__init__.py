@@ -6,11 +6,11 @@
 from pydantic import BaseModel
 
 
-class AuthenticatorModelInput(BaseModel):
+class PerfilModelInput(BaseModel):
     def convert_to_dict(self):
         raise NotImplementedError
 
 
-class AuthenticatorModelOutput(BaseModel):
+class PerfilModelOutput(BaseModel):
     pass
 

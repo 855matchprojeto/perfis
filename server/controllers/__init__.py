@@ -14,6 +14,10 @@ from functools import wraps
 MAIN_LOGGER = get_main_logger()
 
 
+async def pagination_parameters(page_size: int = 10, cursor: str = None):
+    return {"limit": page_size, "cursor": cursor}
+
+
 def endpoint_exception_handler(func):
     @wraps(func)
     async def wrapper(*args, **kwargs):
