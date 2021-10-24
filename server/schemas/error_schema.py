@@ -1,10 +1,10 @@
-from server.schemas import AuthenticatorModelInput, AuthenticatorModelOutput
+from server.schemas import PerfilModelInput, PerfilModelOutput
 from pydantic import Field, BaseModel, EmailStr
 from datetime import datetime
 from typing import List
 
 
-class ErrorOutput401(AuthenticatorModelOutput):
+class ErrorOutput401(PerfilModelOutput):
     status_code: int = Field(example=401)
     error_id: str = Field(example='ID único do tipo do erro no serviço')
     message: str = Field(example='Mensagem do erro')
@@ -15,7 +15,7 @@ class ErrorOutput401(AuthenticatorModelOutput):
         arbitrary_types_allowed = True
 
 
-class ErrorOutput403(AuthenticatorModelOutput):
+class ErrorOutput403(PerfilModelOutput):
     status_code: int = Field(example=403)
     error_id: str = Field(example='ID único do tipo do erro no serviço')
     message: str = Field(example='Mensagem do erro')
@@ -26,7 +26,7 @@ class ErrorOutput403(AuthenticatorModelOutput):
         arbitrary_types_allowed = True
 
 
-class ErrorOutput404(AuthenticatorModelOutput):
+class ErrorOutput404(PerfilModelOutput):
     status_code: int = Field(example=404)
     error_id: str = Field(example='ID único do tipo do erro no serviço')
     message: str = Field(example='Mensagem do erro')
@@ -37,7 +37,7 @@ class ErrorOutput404(AuthenticatorModelOutput):
         arbitrary_types_allowed = True
 
 
-class ErrorOutput409(AuthenticatorModelOutput):
+class ErrorOutput409(PerfilModelOutput):
     status_code: int = Field(example=409)
     error_id: str = Field(example='ID único do tipo do erro no serviço')
     message: str = Field(example='Mensagem do erro')
@@ -48,7 +48,7 @@ class ErrorOutput409(AuthenticatorModelOutput):
         arbitrary_types_allowed = True
 
 
-class ErrorOutput422(AuthenticatorModelOutput):
+class ErrorOutput422(PerfilModelOutput):
 
     status_code: int = Field(example=422)
     error_id: str = Field(example='ID único do tipo do erro no serviço')
@@ -60,7 +60,7 @@ class ErrorOutput422(AuthenticatorModelOutput):
         arbitrary_types_allowed = True
 
 
-class ErrorOutput500(AuthenticatorModelOutput):
+class ErrorOutput500(PerfilModelOutput):
 
     status_code: int = Field(example=500)
     error_id: str = Field(example='ID único do tipo do erro no serviço')

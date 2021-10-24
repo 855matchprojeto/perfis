@@ -7,6 +7,7 @@ from server.configuration.environment import Environment
 from sqlalchemy.orm import selectinload
 from sqlalchemy import and_
 
+
 class PermissaoRepository:
 
     def __init__(self, db_session: AsyncSession, environment: Optional[Environment] = None):
