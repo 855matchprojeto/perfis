@@ -16,15 +16,18 @@ from server.services.perfil_service import PerfilService
 from server.configuration.environment import Environment
 from server.repository.perfil_repository import PerfilRepository
 from server.schemas.perfil_schema import PaginatedPerfilOutput
+from fastapi import Request
 
 
 async def all_profiles_query_params(
     interests_in: Optional[List[str]] = perfil_schema.InterestQuery,
-    courses_in: Optional[List[str]] = perfil_schema.CourseQuery
+    courses_in: Optional[List[str]] = perfil_schema.CourseQuery,
+    display_name_ilike: Optional[str] = perfil_schema.DisplayNameIlikeQuery
 ):
     return {
         "interests_in": interests_in,
-        "courses_in": courses_in
+        "courses_in": courses_in,
+        "display_name_ilike": display_name_ilike
     }
 
 
@@ -55,6 +58,7 @@ perfil_router = dict(
 )
 @endpoint_exception_handler
 async def get_all_profiles(
+    request: Request,
     _: usuario_schema.CurrentUserToken = Security(get_current_user, scopes=[]),
     profiles_query_params: dict = Depends(all_profiles_query_params),
     pagination_params: dict = Depends(pagination_parameters),
@@ -65,7 +69,13 @@ async def get_all_profiles(
     """
         # Descrição
 
-        Retorna as informações do usuário atual vinculadas ao token.
+        Retorna todos os perfis encontrados a partir dos filtros definidos na query string.
+
+        Note que há uma paginação nesse endpoint. O tamanho de cada página é definido pelo
+        parâmetro 'page_size'. Caso existam mais resultados disponíveis, é enviado um valor
+        não-nulo no campo 'next_cursor' na resposta da requisição. Esse valor deverá ser
+        preenchido na query string na próxima requisição. Para facilitar, o formato da nova
+        URL de busca também é preenchida na resposta, no campo 'next_url'.
 
         # Erros
 
@@ -78,7 +88,7 @@ async def get_all_profiles(
 
     """
 
-    filter_params = profiles_query_params
+    filter_params_dict = profiles_query_params
     limit = pagination_params['limit']
     offset = pagination_params['cursor']
 
@@ -91,6 +101,6 @@ async def get_all_profiles(
     )
 
     return await perfil_service.get_all_profiles_paginated(
-        filter_params, limit, offset
+        filter_params_dict, request, limit, offset
     )
 

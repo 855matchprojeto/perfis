@@ -12,9 +12,20 @@ from server.models.vinculo_perfil_curso_model import VinculoPerfilCurso
 from server.models.interesse_model import Interesse
 from server.schemas.cursor_schema import Cursor
 from jose import JWTError, jwt
+from server.models.perfil_phone_model import PerfilPhone
+from server.models.curso_model import Curso
+from server import utils
 
 
 class PerfilRepository:
+
+    @staticmethod
+    def get_name_ilike_filter(nome_exibicao: str):
+        return [
+            Perfil.nome_exibicao_normalized.ilike(
+               utils.normalize_string(f'%{nome_exibicao}%')
+            )
+        ]
 
     @staticmethod
     def get_int_cursor_filter(sort_field_key, cursor_value):
@@ -56,12 +67,29 @@ class PerfilRepository:
             filters.append(PerfilRepository.build_cursor_filter(cursor))
 
         stmt = (
-            select(Perfil, VinculoPerfilInteresse, VinculoPerfilCurso).
+            select(Perfil, VinculoPerfilCurso, VinculoPerfilInteresse, PerfilPhone).
+            outerjoin(
+                VinculoPerfilCurso,
+                VinculoPerfilCurso.id_perfil == Perfil.id,
+            ).
+            outerjoin(
+                Curso,
+                VinculoPerfilCurso.id_curso == Curso.id,
+            ).
+            outerjoin(
+                VinculoPerfilInteresse,
+                VinculoPerfilInteresse.id_perfil == Perfil.id,
+            ).
+            outerjoin(
+                Interesse,
+                VinculoPerfilInteresse.id_interesse == Interesse.id,
+            ).
             options(
                 selectinload(Perfil.vinculos_perfil_curso),
                 selectinload(Perfil.vinculos_perfil_interesse),
-                selectinload(Perfil.profile_phones),
-                selectinload(Perfil.profile_emails),
+                selectinload(Perfil.phones),
+                selectinload(PerfilPhone.tipo_contato),
+                selectinload(Perfil.emails),
                 selectinload(VinculoPerfilInteresse.interesse),
                 selectinload(VinculoPerfilCurso.curso)
             ).
@@ -71,8 +99,7 @@ class PerfilRepository:
 
         # Executando a query
         query = await self.db_session.execute(stmt)
-
-        perfis = query.scalars().all()
+        perfis = query.scalars().unique().all()
 
         # Capturando o ultimo perfil e setando o next_cursor
         next_cursor = None

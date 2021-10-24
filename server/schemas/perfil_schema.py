@@ -14,14 +14,20 @@ from typing import Any, Optional, Literal
 
 InterestQuery = Query(
     None,
-    title="Query string para filtrar a entidade por interesses",
-    description="Query string para filtrar a entidade pelas tags do tipo 'INTERESSES' relacionadas à entidade",
+    title="Query string para filtrar perfis a partir dos nomes de referência dos interesses listados no perfil do usuário",
+    description="Query string para filtrar perfis a partir dos nomes de referência dos interesses listados no perfil do usuário",
 )
 
 CourseQuery = Query(
     None,
-    title="Query string para filtrar a entidade por cursos",
-    description="Query string para filtrar a entidade pelas tags do tipo 'CURSO' relacionadas à entidade",
+    title="Query string para filtrar perfis a partir dos nomes de referência dos cursos listados no perfil do usuário",
+    description="Query string para filtrar perfis a partir dos nomes de referência dos cursos listados no perfil do usuário",
+)
+
+DisplayNameIlikeQuery = Query(
+    None,
+    title="Query string para filtrar perfis com nomes de exibição que contém esse valor",
+    description="Query string para filtrar perfis com nomes de exibição que contém esse valor",
 )
 
 
@@ -44,9 +50,12 @@ class PerfilOutput(BaseModel):
 class PaginatedPerfilOutput(PerfilModelOutput):
 
     items: List[PerfilOutput]
-    previous_cursor: Optional[str] = Field(example='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9')
-    next_cursor: Optional[str] = Field(example='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9')
+    previous_cursor: Optional[str] = Field(example='previous_cursor_token')
+    next_cursor: Optional[str] = Field(example='next_cursor_token')
+    previous_url: Optional[str] = Field(example='http://localhost/profiles/?page_size=10&cursor=previous_cursor_token')
+    next_url: Optional[str] = Field(example='http://localhost/profiles/?page_size=10&cursor=next_cursor_token')
 
     class Config:
         orm_mode = True
         arbitrary_types_allowed = True
+

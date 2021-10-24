@@ -23,16 +23,18 @@ class Perfil(db.Base, AuthenticatorBase):
 
     guid_usuario = Column(UUID(as_uuid=True), nullable=False, unique=True)
     bio = Column(String())
-    nome_exibicao = Column(String())
 
-    profile_emails = relationship(
+    nome_exibicao = Column(String())
+    nome_exibicao_normalized = Column(String())
+
+    emails = relationship(
         "PerfilEmail",
         primaryjoin=(
             id == PerfilEmail.id_perfil
         )
     )
 
-    profile_phones = relationship(
+    phones = relationship(
         "PerfilPhone",
         primaryjoin=(
             id == PerfilPhone.id_perfil
