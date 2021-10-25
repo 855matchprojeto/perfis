@@ -15,9 +15,19 @@ from jose import JWTError, jwt
 from server.models.perfil_phone_model import PerfilPhone
 from server.models.curso_model import Curso
 from server import utils
+from sqlalchemy.sql import operators
 
 
 class PerfilRepository:
+
+    @staticmethod
+    def get_operator_dictionary():
+        return {
+            'ge': operators.ge,
+            'gt': operators.gt,
+            'le': operators.le,
+            'lt': operators.lt
+        }
 
     @staticmethod
     def get_name_ilike_filter(nome_exibicao: str):
@@ -28,25 +38,32 @@ class PerfilRepository:
         ]
 
     @staticmethod
-    def get_int_cursor_filter(sort_field_key, cursor_value):
-        return getattr(Perfil, sort_field_key) >= int(cursor_value)
+    def get_default_cursor_filter(sort_field_key, cursor_value, _operator):
+        return _operator(getattr(Perfil, sort_field_key), cursor_value)
+
+    @staticmethod
+    def get_int_cursor_filter(sort_field_key, cursor_value, _operator):
+        return _operator(getattr(Perfil, sort_field_key), int(cursor_value))
 
     @staticmethod
     def get_cursor_filter_factory():
         return {
-            "int": PerfilRepository.get_int_cursor_filter
+            "int": PerfilRepository.get_int_cursor_filter,
+            "str": PerfilRepository.get_default_cursor_filter
         }
 
     @staticmethod
     def build_cursor_filter(cursor: Cursor):
         # Factory e builder descrevem como construir o filtro
         cursor_field_factory = PerfilRepository.get_cursor_filter_factory()
+        cursor_operator_factory = PerfilRepository.get_operator_dictionary()
         cursor_field_type = cursor.sort_field_type
         cursor_field_builder = cursor_field_factory[cursor_field_type]
         # Retornando o resultado usando o builder com os argumentos
         cursor_field_key = cursor.sort_field_key
         cursor_value = cursor.value
-        return cursor_field_builder(cursor_field_key, cursor_value)
+        cursor_operator = cursor_operator_factory[cursor.operator]
+        return cursor_field_builder(cursor_field_key, cursor_value, cursor_operator)
 
     def __init__(self, db_session: AsyncSession, environment: Optional[Environment] = None):
         self.db_session = db_session
@@ -94,7 +111,8 @@ class PerfilRepository:
                 selectinload(VinculoPerfilCurso.curso)
             ).
             where(*filters).
-            limit(limit + 1)
+            limit(limit + 1).
+            order_by(Perfil.nome_exibicao.asc())
         )
 
         # Executando a query
@@ -106,9 +124,10 @@ class PerfilRepository:
         if len(perfis) == (limit+1):
             last_profile = perfis[limit]
             next_cursor = {
-                'sort_field_key': cursor.sort_field_key if cursor else 'id',
-                'sort_field_type': cursor.sort_field_type if cursor else 'int',
-                'value': last_profile.id
+                'sort_field_key': cursor.sort_field_key if cursor else 'nome_exibicao',
+                'sort_field_type': cursor.sort_field_type if cursor else 'str',
+                'operator': 'ge',
+                'value': last_profile.nome_exibicao
             }
 
         return {
