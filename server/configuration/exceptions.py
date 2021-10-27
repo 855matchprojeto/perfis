@@ -108,6 +108,17 @@ class UserNotFoundException(ApiBaseException):
         super().__init__(status_code, error_id, message, detail)
 
 
+class ProfileNotFoundException(ApiBaseException):
+    def __init__(
+        self,
+        status_code=status.HTTP_404_NOT_FOUND,
+        error_id='PROFILE_NOT_FOUND',
+        message='O perfil não foi encontrado no sistema',
+        detail=''
+    ) -> None:
+        super().__init__(status_code, error_id, message, detail)
+
+
 class InvalidUsernamePasswordException(ApiBaseException):
     def __init__(
         self,

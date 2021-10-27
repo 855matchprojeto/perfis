@@ -13,7 +13,7 @@ from fastapi import Request
 from pydantic import ValidationError, EmailStr
 from server.templates import jinja2_templates
 from server.configuration.environment import Environment
-from server.schemas.usuario_schema import CurrentUserOutput
+from server.schemas.usuario_schema import CurrentUserOutput, CurrentUserToken
 from functools import lru_cache
 from server.services import insert_filter, get_filters_base
 from server.repository.perfil_repository import PerfilRepository
@@ -22,6 +22,7 @@ from server.repository.curso_repository import CursoRepository
 from server.schemas.cursor_schema import Cursor
 from server.models.perfil_model import Perfil
 from server import utils
+from server.schemas.perfil_schema import PerfilPostInput, PerfilUpdateInput
 
 
 class PerfilService:
@@ -91,6 +92,12 @@ class PerfilService:
         paginated_profile_dict['next_url'] = PerfilService.get_next_url(request, request.url.path, next_encoded_cursor)
         return paginated_profile_dict
 
+    @staticmethod
+    def validate_current_user_to_input(current_user: CurrentUserToken, perfil_input):
+        return (
+            perfil_input.guid_usuario == current_user.guid
+        )
+
     def __init__(self, perfil_repo: Optional[PerfilRepository] = None, environment: Optional[Environment] = None):
         self.perfil_repo = perfil_repo
         self.environment = environment
@@ -102,6 +109,14 @@ class PerfilService:
             algorithms=[self.environment.CURSOR_TOKEN_ALGORITHM]
         )
         return Cursor(**decoded_cursor_dict)
+
+    async def get_profile_by_guid(self, guid_profile: str):
+        profile = await self.perfil_repo.find_profile_by_guid(guid_profile)
+        return self.handle_profile_body(profile)
+
+    async def get_profile_by_guid_usuario(self, guid_usuario: str):
+        profile = await self.perfil_repo.find_profile_by_guid_usuario(guid_usuario)
+        return self.handle_profile_body(profile)
 
     async def get_all_profiles_paginated(
         self, filter_params_dict: dict,
@@ -118,4 +133,18 @@ class PerfilService:
         )
 
         return paginated_profile_dict
+
+    async def create_profile_by_guid_usuario(self, guid_usuario: str, profile_input: PerfilPostInput):
+        profile_dict = profile_input.convert_to_dict()
+        profile_dict['guid_usuario'] = guid_usuario
+        profile_dict['nome_exibicao_normalized'] = utils.normalize_string(profile_dict['nome_exibicao'])
+        return await self.perfil_repo.insere_perfil(profile_dict)
+
+    async def update_profile_by_guid_usuario(self, guid_usuario: str, profile_input: PerfilUpdateInput):
+        profile_dict = profile_input.convert_to_dict()
+        profile_dict['nome_exibicao_normalized'] = utils.normalize_string(profile_dict['nome_exibicao'])
+        return await self.perfil_repo.atualiza_perfil_by_guid_usuario(guid_usuario, profile_dict)
+
+    async def delete_profile_by_guid_usuario(self, guid_usuario: str):
+        return await self.perfil_repo.delete_perfil_by_guid_usuario(guid_usuario)
 

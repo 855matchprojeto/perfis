@@ -15,8 +15,9 @@ from server.controllers import pagination_parameters
 from server.services.perfil_service import PerfilService
 from server.configuration.environment import Environment
 from server.repository.perfil_repository import PerfilRepository
-from server.schemas.perfil_schema import PaginatedPerfilOutput
-from fastapi import Request
+from server.schemas.perfil_schema import PaginatedPerfilOutput, PerfilOutput, PerfilPostInput, \
+    PerfilUpdateInput, PerfilUpdateOutput
+from fastapi import Request, status
 
 
 async def all_profiles_query_params(
@@ -103,4 +104,344 @@ async def get_all_profiles(
     return await perfil_service.get_all_profiles_paginated(
         filter_params_dict, request, limit, offset
     )
+
+@router.get(
+    "/{guid_perfil}",
+    response_model=PerfilOutput,
+    summary='Retorna o perfil a partir de seu GUID',
+    response_description='Retorna o perfil criado a partir do seu GUID',
+    responses={
+        401: {
+            'model': error_schema.ErrorOutput401,
+        },
+        404: {
+            'model': error_schema.ErrorOutput404,
+        },
+        422: {
+            'model': error_schema.ErrorOutput422,
+        },
+        500: {
+            'model': error_schema.ErrorOutput500
+        }
+    }
+)
+@endpoint_exception_handler
+async def get_profile_by_guid(
+    guid_perfil: str,
+    _: usuario_schema.CurrentUserToken = Security(get_current_user, scopes=[]),
+    session: AsyncSession = Depends(get_session),
+    environment: Environment = Depends(get_environment_cached),
+):
+
+    """
+        # Descrição
+
+        Retorna o perfil a partir do GUID no path.
+
+        # Erros
+
+        Segue a lista de erros, por (**error_id**, **status_code**), que podem ocorrer nesse endpoint:
+
+        - **(INVALID_OR_EXPIRED_TOKEN, 401)**: Token de acesso inválido ou expirado.
+        - **(PROFILE_NOT_FOUND, 404)**: Perfil não encontrado no sistema.
+        - **(REQUEST_VALIDATION_ERROR, 422)**: Validação padrão da requisição. O detalhamento é um JSON,
+        no formato de string, contendo os erros de validação encontrados.
+        - **(INTERNAL_SERVER_ERROR, 500)**: Erro interno no sistema
+
+    """
+
+    perfil_service = PerfilService(
+        perfil_repo=PerfilRepository(
+            db_session=session,
+            environment=environment
+        ),
+        environment=environment
+    )
+
+    return await perfil_service.get_profile_by_guid(guid_perfil)
+
+
+@router.get(
+    "/user/find-user-by-guid/{guid_usuario}",
+    response_model=PerfilOutput,
+    summary='Retorna o perfil a partir do GUID do usuário',
+    response_description='Retorna o perfil a partir do GUID do usuário',
+    responses={
+        401: {
+            'model': error_schema.ErrorOutput401,
+        },
+        404: {
+            'model': error_schema.ErrorOutput404,
+        },
+        422: {
+            'model': error_schema.ErrorOutput422,
+        },
+        500: {
+            'model': error_schema.ErrorOutput500
+        }
+    }
+)
+@endpoint_exception_handler
+async def get_profile_by_guid_usuario(
+    guid_usuario: str,
+    _: usuario_schema.CurrentUserToken = Security(get_current_user, scopes=[]),
+    session: AsyncSession = Depends(get_session),
+    environment: Environment = Depends(get_environment_cached),
+):
+
+    """
+        # Descrição
+
+        Retorna o perfil a partir do GUID do usuário no path.
+
+        # Erros
+
+        Segue a lista de erros, por (**error_id**, **status_code**), que podem ocorrer nesse endpoint:
+
+        - **(INVALID_OR_EXPIRED_TOKEN, 401)**: Token de acesso inválido ou expirado.
+        - **(PROFILE_NOT_FOUND, 404)**: Perfil não encontrado no sistema.
+        - **(REQUEST_VALIDATION_ERROR, 422)**: Validação padrão da requisição. O detalhamento é um JSON,
+        no formato de string, contendo os erros de validação encontrados.
+        - **(INTERNAL_SERVER_ERROR, 500)**: Erro interno no sistema
+
+    """
+
+    perfil_service = PerfilService(
+        perfil_repo=PerfilRepository(
+            db_session=session,
+            environment=environment
+        ),
+        environment=environment
+    )
+
+    return await perfil_service.get_profile_by_guid_usuario(guid_usuario)
+
+
+@router.get(
+    "/user/me",
+    response_model=PerfilOutput,
+    summary='Busca o perfil do usuário atual',
+    response_description='Retorna o perfil do usuário atual',
+    responses={
+        401: {
+            'model': error_schema.ErrorOutput401,
+        },
+        404: {
+            'model': error_schema.ErrorOutput404,
+        },
+        422: {
+            'model': error_schema.ErrorOutput422,
+        },
+        500: {
+            'model': error_schema.ErrorOutput500
+        }
+    }
+)
+@endpoint_exception_handler
+async def get_own_profile(
+    current_user: usuario_schema.CurrentUserToken = Security(get_current_user, scopes=[]),
+    session: AsyncSession = Depends(get_session),
+    environment: Environment = Depends(get_environment_cached),
+):
+
+    """
+        # Descrição
+
+        Busca o perfil do usuário atual, além de todas as relações com as demais entidades
+        vinculadas ao perfil
+
+        # Erros
+
+        Segue a lista de erros, por (**error_id**, **status_code**), que podem ocorrer nesse endpoint:
+
+        - **(INVALID_OR_EXPIRED_TOKEN, 401)**: Token de acesso inválido ou expirado.
+        - **(REQUEST_VALIDATION_ERROR, 422)**: Validação padrão da requisição. O detalhamento é um JSON,
+        no formato de string, contendo os erros de validação encontrados.
+        - **(INTERNAL_SERVER_ERROR, 500)**: Erro interno no sistema
+
+    """
+
+    perfil_service = PerfilService(
+        perfil_repo=PerfilRepository(
+            db_session=session,
+            environment=environment
+        ),
+        environment=environment
+    )
+
+    guid_usuario = current_user.guid
+
+    return await perfil_service.get_profile_by_guid_usuario(guid_usuario)
+
+
+@router.post(
+    "/user/me",
+    response_model=PerfilOutput,
+    summary='Cria um novo perfil para o usuário atual',
+    response_description='Retorna o perfil criado para o usuário atual, incluindo o GUID do perfil na resposta',
+    responses={
+        401: {
+            'model': error_schema.ErrorOutput401,
+        },
+        422: {
+            'model': error_schema.ErrorOutput422,
+        },
+        500: {
+            'model': error_schema.ErrorOutput500
+        }
+    }
+)
+@endpoint_exception_handler
+async def post_own_profile(
+    perfil_input: PerfilPostInput,
+    current_user: usuario_schema.CurrentUserToken = Security(get_current_user, scopes=[]),
+    session: AsyncSession = Depends(get_session),
+    environment: Environment = Depends(get_environment_cached),
+):
+
+    """
+        # Descrição
+
+        Cria o perfil do usuário atual a partir dos campos definidos no corpo da requisição
+
+        # Erros
+
+        Segue a lista de erros, por (**error_id**, **status_code**), que podem ocorrer nesse endpoint:
+
+        - **(INVALID_OR_EXPIRED_TOKEN, 401)**: Token de acesso inválido ou expirado.
+        - **(REQUEST_VALIDATION_ERROR, 422)**: Validação padrão da requisição. O detalhamento é um JSON,
+        no formato de string, contendo os erros de validação encontrados.
+        - **(INTERNAL_SERVER_ERROR, 500)**: Erro interno no sistema
+
+    """
+
+    perfil_service = PerfilService(
+        perfil_repo=PerfilRepository(
+            db_session=session,
+            environment=environment
+        ),
+        environment=environment
+    )
+
+    guid_usuario = current_user.guid
+
+    return await perfil_service.create_profile_by_guid_usuario(guid_usuario, perfil_input)
+
+
+@router.put(
+    "/user/me",
+    response_model=PerfilUpdateOutput,
+    summary='Atualiza o perfil do usuário atual.',
+    response_description='O perfil é atualizado e são retornadas as informações atualizadas. Note que algumas informações não são retornadas'
+    ', como os vínculos com as demais entidades',
+    responses={
+        401: {
+            'model': error_schema.ErrorOutput401,
+        },
+        404: {
+            'model': error_schema.ErrorOutput404,
+        },
+        422: {
+            'model': error_schema.ErrorOutput422,
+        },
+        500: {
+            'model': error_schema.ErrorOutput500
+        }
+    }
+)
+@endpoint_exception_handler
+async def put_own_profile(
+    perfil_input: PerfilUpdateInput,
+    current_user: usuario_schema.CurrentUserToken = Security(get_current_user, scopes=[]),
+    session: AsyncSession = Depends(get_session),
+    environment: Environment = Depends(get_environment_cached),
+):
+
+    """
+        # Descrição
+
+        Atualiza o perfil do usuário atual a partir dos campos definidos no corpo da requisição.
+        Note que a respostas é mais "enxuta" e não retorna os vínculos com as outras entidades.
+
+        # Erros
+
+        Segue a lista de erros, por (**error_id**, **status_code**), que podem ocorrer nesse endpoint:
+
+        - **(INVALID_OR_EXPIRED_TOKEN, 401)**: Token de acesso inválido ou expirado.
+        - **(PROFILE_NOT_FOUND, 404)**: Perfil não encontrado no sistema.
+        - **(REQUEST_VALIDATION_ERROR, 422)**: Validação padrão da requisição. O detalhamento é um JSON,
+        no formato de string, contendo os erros de validação encontrados.
+        - **(INTERNAL_SERVER_ERROR, 500)**: Erro interno no sistema
+
+    """
+
+    perfil_service = PerfilService(
+        perfil_repo=PerfilRepository(
+            db_session=session,
+            environment=environment
+        ),
+        environment=environment
+    )
+
+    guid_usuario = current_user.guid
+
+    return await perfil_service.update_profile_by_guid_usuario(guid_usuario, perfil_input)
+
+
+@router.delete(
+    "/user/me",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary='Deleta o perfil do usuário atual',
+    responses={
+        401: {
+            'model': error_schema.ErrorOutput401,
+        },
+        404: {
+            'model': error_schema.ErrorOutput404,
+        },
+        422: {
+            'model': error_schema.ErrorOutput422,
+        },
+        500: {
+            'model': error_schema.ErrorOutput500
+        }
+    }
+)
+@endpoint_exception_handler
+async def delete_profile(
+    current_user: usuario_schema.CurrentUserToken = Security(get_current_user, scopes=[]),
+    session: AsyncSession = Depends(get_session),
+    environment: Environment = Depends(get_environment_cached),
+):
+
+    """
+        # Descrição
+
+        Atualiza o perfil do usuário a partir dos campos definidos no corpo da requisição.
+        Note que a respostas é mais "enxuta" e não retorna os vínculos com as outras entidades.
+
+        # Erros
+
+        Segue a lista de erros, por (**error_id**, **status_code**), que podem ocorrer nesse endpoint:
+
+        - **(INVALID_OR_EXPIRED_TOKEN, 401)**: Token de acesso inválido ou expirado.
+        - **(PROFILE_NOT_FOUND, 404)**: Perfil não encontrado no sistema.
+        - **(REQUEST_VALIDATION_ERROR, 422)**: Validação padrão da requisição. O detalhamento é um JSON,
+        no formato de string, contendo os erros de validação encontrados.
+        - **(INTERNAL_SERVER_ERROR, 500)**: Erro interno no sistema
+
+    """
+
+    perfil_service = PerfilService(
+        perfil_repo=PerfilRepository(
+            db_session=session,
+            environment=environment
+        ),
+        environment=environment
+    )
+
+    guid_usuario = current_user.guid
+
+    await perfil_service.delete_profile_by_guid_usuario(guid_usuario)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
