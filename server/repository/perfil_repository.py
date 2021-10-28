@@ -357,3 +357,83 @@ class PerfilRepository:
         # Executando a query
         await self.db_session.execute(stmt)
 
+    async def insert_email_profile(self, perfil_email_dict):
+        stmt = (
+            insert(PerfilEmail).
+            returning(literal_column('*')).
+            values(**perfil_email_dict)
+        )
+        query = await self.db_session.execute(stmt)
+        row_to_dict = dict(query.fetchone())
+        return PerfilEmail(**row_to_dict)
+
+    async def atualiza_email_profile(self, guid_perfil_email: str, perfil_email_update_dict: dict):
+        stmt = (
+            update(PerfilEmail).
+            returning(literal_column('*')).
+            where(PerfilEmail.guid == guid_perfil_email).
+            values(**perfil_email_update_dict)
+        )
+        query = await self.db_session.execute(stmt)
+        row_to_dict = dict(query.fetchone())
+        return PerfilEmail(**row_to_dict)
+
+    async def delete_email_profile(self, guid_perfil_email: str):
+        stmt = (
+            delete(PerfilEmail).
+            where(PerfilEmail.guid == guid_perfil_email)
+        )
+        await self.db_session.execute(stmt)
+
+    async def find_perfil_email_by_guid(self, perfil_email_guid: str):
+        stmt = (
+            select(PerfilEmail).
+            where(
+                PerfilEmail.guid == perfil_email_guid
+            )
+        )
+
+        # Executando a query
+        query = await self.db_session.execute(stmt)
+        return query.scalars().unique().first()
+
+    async def insert_phone_profile(self, perfil_phone_dict):
+        stmt = (
+            insert(PerfilPhone).
+            returning(literal_column('*')).
+            values(**perfil_phone_dict)
+        )
+        query = await self.db_session.execute(stmt)
+        row_to_dict = dict(query.fetchone())
+        return PerfilPhone(**row_to_dict)
+
+    async def atualiza_phone_profile(self, guid_perfil_phone: str, perfil_phone_update_dict: dict):
+        stmt = (
+            update(PerfilPhone).
+            returning(literal_column('*')).
+            where(PerfilPhone.guid == guid_perfil_phone).
+            values(**perfil_phone_update_dict)
+        )
+        query = await self.db_session.execute(stmt)
+        row_to_dict = dict(query.fetchone())
+        return PerfilPhone(**row_to_dict)
+
+    async def delete_phone_profile(self, guid_perfil_phone: str):
+        stmt = (
+            delete(PerfilPhone).
+            where(PerfilPhone.guid == guid_perfil_phone)
+        )
+        await self.db_session.execute(stmt)
+
+    async def find_perfil_phone_by_guid(self, perfil_phone_guid: str):
+        stmt = (
+            select(PerfilPhone).
+            where(
+                PerfilPhone.guid == perfil_phone_guid
+            )
+        )
+
+        # Executando a query
+        query = await self.db_session.execute(stmt)
+        return query.scalars().unique().first()
+

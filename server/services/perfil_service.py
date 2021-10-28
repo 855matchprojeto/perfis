@@ -25,6 +25,12 @@ from server import utils
 from server.schemas.perfil_schema import PerfilPostInput, PerfilUpdateInput
 from server.models.curso_model import Curso
 from server.models.interesse_model import Interesse
+from server.schemas.perfil_email_schema import PerfilEmailOutput, PerfilEmailPostInput, \
+    PerfilEmailUpdateInput
+from server.models.perfil_email_model import PerfilEmail
+from server.schemas.perfil_phone_schema import PerfilPhoneOutput, PerfilPhonePostInput, PerfilPhoneUpdateInput
+from server.repository.tipo_contato_repository import TipoContatoRepository
+from server.models.tipo_contato_model import TipoContato
 
 
 class PerfilService:
@@ -105,11 +111,13 @@ class PerfilService:
         perfil_repo: Optional[PerfilRepository] = None,
         curso_repo: Optional[CursoRepository] = None,
         interesse_repo: Optional[InteresseRepository] = None,
+        tipo_contato_repo: Optional[TipoContatoRepository] = None,
         environment: Optional[Environment] = None
     ):
         self.perfil_repo = perfil_repo
         self.curso_repo = curso_repo
         self.interesse_repo = interesse_repo
+        self.tipo_contato_repo =tipo_contato_repo
         self.environment = environment
 
     def decode_cursor_info(self, encoded_cursor: str):
@@ -121,12 +129,20 @@ class PerfilService:
         return Cursor(**decoded_cursor_dict)
 
     async def get_profile_by_guid(self, guid_profile: str):
-        profile = await self.perfil_repo.find_profile_by_guid(guid_profile)
-        return self.handle_profile_body(profile)
+        perfil = await self.perfil_repo.find_profile_by_guid(guid_profile)
+        if not perfil:
+            raise exceptions.ProfileNotFoundException(
+                detail=f"O perfil de GUID={guid_profile} não foi encontrado."
+            )
+        return self.handle_profile_body(perfil)
 
     async def get_profile_by_guid_usuario(self, guid_usuario: str):
-        profile = await self.perfil_repo.find_profile_by_guid_usuario(guid_usuario)
-        return self.handle_profile_body(profile)
+        perfil = await self.perfil_repo.find_profile_by_guid_usuario(guid_usuario)
+        if not perfil:
+            raise exceptions.ProfileNotFoundException(
+                detail=f"O perfil do usuário de GUID={guid_usuario} não foi encontrado."
+            )
+        return self.handle_profile_body(perfil)
 
     async def get_all_profiles_paginated(
         self, filter_params_dict: dict,
@@ -146,7 +162,7 @@ class PerfilService:
 
     async def create_profile_by_guid_usuario(self, guid_usuario: str, profile_input: PerfilPostInput):
         # Verificando se ja existe um perfil para o usuário
-        perfil_db = self.perfil_repo.find_profile_by_guid_usuario(
+        perfil_db = await self.perfil_repo.find_profile_by_guid_usuario(
             guid_usuario,
             load_all_entities=False
         )
@@ -177,13 +193,13 @@ class PerfilService:
         # Capturando o ID do perfil
         return await self.perfil_repo.delete_perfil(perfil.id)
 
-    async def link_course_to_profile(self, guid_usuario, nome_referencia_curso: str):
+    async def link_course_to_profile(self, guid_usuario, id_curso: int):
         cursos = await self.curso_repo.find_all_courses_by_filters(
-            [Curso.nome_referencia == nome_referencia_curso]
+            [Curso.id == id_curso]
         )
         if not cursos:
             raise exceptions.CourseNotFoundException(
-                detail=f"Não foi encontrado um curso com nome de referência {nome_referencia_curso}"
+                detail=f"Não foi encontrado um curso com ID = {id_curso}"
             )
         curso = cursos[0]
 
@@ -203,7 +219,7 @@ class PerfilService:
         if vinculo_db:
             raise exceptions.CourseLinkConflictException(
                 detail=f"Já existe um vínculo do perfil do usuário {guid_usuario}"
-                       f" com o curso {nome_referencia_curso}"
+                       f" com o curso de ID = {id_curso}"
             )
 
         await self.perfil_repo.insert_vinculo_perfil_curso(
@@ -211,13 +227,13 @@ class PerfilService:
             perfil.id
         )
 
-    async def delete_profile_course_link(self, guid_usuario, nome_referencia_curso: str):
+    async def delete_profile_course_link(self, guid_usuario, id_curso: int):
         cursos = await self.curso_repo.find_all_courses_by_filters(
-            [Curso.nome_referencia == nome_referencia_curso]
+            [Curso.id == id_curso]
         )
         if not cursos:
             raise exceptions.CourseNotFoundException(
-                detail=f"Não foi encontrado um curso com nome de referência {nome_referencia_curso}"
+                detail=f"Não foi encontrado um curso com ID = {id_curso}"
             )
         curso = cursos[0]
 
@@ -237,7 +253,7 @@ class PerfilService:
         if not vinculo_db:
             raise exceptions.CourseLinkNotFoundException(
                 detail=f"Não existe um vínculo do perfil do usuário {guid_usuario}"
-                       f" com o curso {nome_referencia_curso}"
+                       f" com o curso de ID = {id_curso}"
             )
 
         await self.perfil_repo.delete_vinculo_perfil_curso(
@@ -245,13 +261,13 @@ class PerfilService:
             perfil.id
         )
 
-    async def link_interest_to_profile(self, guid_usuario, nome_referencia_interesse: str):
+    async def link_interest_to_profile(self, guid_usuario, id_interesse: int):
         interesses = await self.interesse_repo.find_all_interests_by_filters(
-            [Interesse.nome_referencia == nome_referencia_interesse]
+            [Interesse.id == id_interesse]
         )
         if not interesses:
             raise exceptions.InterestNotFoundException(
-                detail=f"Não foi encontrado um interesse com nome de referência {nome_referencia_interesse}"
+                detail=f"Não foi encontrado um interesse com ID = {id_interesse}"
             )
         interesse = interesses[0]
 
@@ -271,7 +287,7 @@ class PerfilService:
         if vinculo_db:
             raise exceptions.InterestLinkConflictException(
                 detail=f"Já existe um vínculo do perfil do usuário {guid_usuario}"
-                       f" com o interesse {nome_referencia_interesse}"
+                       f" com o interesse de ID = {id_interesse}"
             )
 
         await self.perfil_repo.insert_vinculo_perfil_interesse(
@@ -279,13 +295,13 @@ class PerfilService:
             perfil.id
         )
 
-    async def delete_profile_interest_link(self, guid_usuario, nome_referencia_interesse: str):
+    async def delete_profile_interest_link(self, guid_usuario, id_interesse: int):
         interesses = await self.interesse_repo.find_all_interests_by_filters(
-            [Interesse.nome_referencia == nome_referencia_interesse]
+            [Interesse.id == id_interesse]
         )
         if not interesses:
             raise exceptions.InterestNotFoundException(
-                detail=f"Não foi encontrado um interesse com nome de referência {nome_referencia_interesse}"
+                detail=f"Não foi encontrado um interesse com ID = {id_interesse}"
             )
         interesse = interesses[0]
 
@@ -305,10 +321,161 @@ class PerfilService:
         if not vinculo_db:
             raise exceptions.InterestLinkNotFoundException(
                 detail=f"Não existe um vínculo do perfil do usuário {guid_usuario}"
-                       f" com o interesse {nome_referencia_interesse}"
+                       f" com o interesse de ID = {id_interesse}"
             )
 
         await self.perfil_repo.delete_vinculo_perfil_interesse(
             interesse.id,
             perfil.id
         )
+
+    async def insert_email_profile_by_guid_usuario(
+        self, guid_usuario: str, perfil_email_input: PerfilEmailPostInput
+    ):
+
+        # Procurando o perfil a partir do guid do usuário
+        perfil = await self.perfil_repo.find_profile_by_guid_usuario(
+            guid_usuario,
+            load_all_entities=False
+        )
+        if not perfil:
+            raise exceptions.ProfileNotFoundException(
+                detail=f"Não foi encontrado um perfil para o usuário {guid_usuario}"
+            )
+
+        # Inserindo no banco de dados
+        perfil_email_dict = perfil_email_input.convert_to_dict()
+        perfil_email_dict['id_perfil'] = perfil.id
+        return await self.perfil_repo.insert_email_profile(perfil_email_dict)
+
+    async def update_email_profile_by_guid(
+        self, guid_perfil_email: str, perfil_email_update_input: PerfilEmailUpdateInput
+    ):
+
+        # Procurando a entidade de PerfilEmail a partir do guid do perfil_email
+        perfil_email = await self.perfil_repo.find_perfil_email_by_guid(
+            guid_perfil_email
+        )
+        if not perfil_email:
+            raise exceptions.ProfileEmailNotFoundException(
+                detail=f"Não foi encontrado a entidade de PerfilEmail de GUID = {guid_perfil_email}"
+            )
+
+        # Inserindo no banco de dados
+        perfil_email_update_dict = perfil_email_update_input.convert_to_dict()
+        return await self.perfil_repo.atualiza_email_profile(
+            guid_perfil_email,
+            perfil_email_update_dict
+        )
+
+    async def delete_email_profile_by_guid(
+        self, guid_perfil_email: str
+    ):
+
+        # Procurando a entidade de PerfilEmail a partir do guid do perfil_email
+        perfil_email = await self.perfil_repo.find_perfil_email_by_guid(
+            guid_perfil_email
+        )
+        if not perfil_email:
+            raise exceptions.ProfileEmailNotFoundException(
+                detail=f"Não foi encontrado a entidade de PerfilEmail de GUID = {guid_perfil_email}"
+            )
+
+        # Deleta a entidade no banco de dados
+        return await self.perfil_repo.delete_email_profile(
+            guid_perfil_email,
+        )
+
+    async def insert_phone_profile_by_guid_usuario(
+        self, guid_usuario: str, perfil_phone_input: PerfilPhonePostInput
+    ):
+
+        # Procurando o perfil a partir do guid do usuário
+        perfil = await self.perfil_repo.find_profile_by_guid_usuario(
+            guid_usuario,
+            load_all_entities=False
+        )
+        if not perfil:
+            raise exceptions.ProfileNotFoundException(
+                detail=f"Não foi encontrado um perfil para o usuário {guid_usuario}"
+            )
+
+        # Verificando se tipo_contato é válido
+        id_tipo_contato = perfil_phone_input.id_tipo_contato
+        tipo_contato = None
+
+        if id_tipo_contato is not None:
+            tipos_contato = await self.tipo_contato_repo.find_all_tipos_contato_by_filters(
+                [TipoContato.id == id_tipo_contato]
+            )
+            if len(tipos_contato) == 0:
+                raise exceptions.TipoContatoNotFoundException(
+                    detail=f"Não foi encontrado um tipo de contato com o ID = {id_tipo_contato}"
+                )
+            else:
+                tipo_contato = tipos_contato[0]
+
+        # Inserindo no banco de dados
+        perfil_phone_dict = perfil_phone_input.convert_to_dict()
+        perfil_phone_dict['id_perfil'] = perfil.id
+        perfil = await self.perfil_repo.insert_phone_profile(perfil_phone_dict)
+        perfil.tipo_contato = tipo_contato
+
+        return perfil
+
+    async def update_phone_profile_by_guid(
+        self, guid_perfil_phone: str, perfil_phone_update_input: PerfilPhoneUpdateInput
+    ):
+
+        # Procurando a entidade de PerfilPhone a partir do guid do perfil_phone
+        perfil_email = await self.perfil_repo.find_perfil_email_by_guid(
+            guid_perfil_phone
+        )
+        if not perfil_email:
+            raise exceptions.ProfilePhoneNotFoundException(
+                detail=f"Não foi encontrado a entidade de PerfilPhone de GUID = {guid_perfil_phone}"
+            )
+
+        # Verificando se tipo_contato é válido
+        id_tipo_contato = perfil_phone_update_input.id_tipo_contato
+        tipo_contato = None
+
+        if id_tipo_contato is not None:
+            tipos_contato = await self.tipo_contato_repo.find_all_tipos_contato_by_filters(
+                [TipoContato.id == id_tipo_contato]
+            )
+            if len(tipos_contato) == 0:
+                raise exceptions.TipoContatoNotFoundException(
+                    detail=f"Não foi encontrado um tipo de contato com o ID = {id_tipo_contato}"
+                )
+            else:
+                tipo_contato = tipos_contato[0]
+
+        # Inserindo no banco de dados
+        perfil_phone_update_dict = perfil_phone_update_input.convert_to_dict()
+        perfil = await self.perfil_repo.atualiza_phone_profile(
+            guid_perfil_phone,
+            perfil_phone_update_dict
+        )
+        perfil.tipo_contato = tipo_contato
+
+        return perfil
+
+    async def delete_phone_profile_by_guid(
+        self, guid_perfil_phone: str
+    ):
+
+        # Procurando a entidade de PerfilPhone a partir do guid do perfil_phone
+        perfil_phone = await self.perfil_repo.find_perfil_phone_by_guid(
+            guid_perfil_phone
+        )
+        if not perfil_phone:
+            raise exceptions.ProfilePhoneNotFoundException(
+                detail=f"Não foi encontrado a entidade de PerfilPhone de GUID = {guid_perfil_phone}"
+            )
+
+        # Deleta a entidade no banco de dados
+        return await self.perfil_repo.delete_phone_profile(
+            guid_perfil_phone,
+        )
+

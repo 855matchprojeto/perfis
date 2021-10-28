@@ -20,6 +20,11 @@ from server.repository.interesse_repository import InteresseRepository
 from server.schemas.perfil_schema import PaginatedPerfilOutput, PerfilOutput, PerfilPostInput, \
     PerfilUpdateInput, PerfilUpdateOutput
 from fastapi import Request, status
+from uuid import UUID as GUID
+from server.models.perfil_email_model import PerfilEmail
+from server.schemas.perfil_email_schema import PerfilEmailUpdateInput, PerfilEmailOutput, PerfilEmailPostInput
+from server.schemas.perfil_phone_schema import PerfilPhoneOutput, PerfilPhoneUpdateInput, PerfilPhonePostInput
+from server.repository.tipo_contato_repository import TipoContatoRepository
 
 
 async def all_profiles_query_params(
@@ -130,7 +135,7 @@ async def get_all_profiles(
 )
 @endpoint_exception_handler
 async def get_profile_by_guid(
-    guid_perfil: str,
+    guid_perfil: GUID,
     _: usuario_schema.CurrentUserToken = Security(get_current_user, scopes=[]),
     session: AsyncSession = Depends(get_session),
     environment: Environment = Depends(get_environment_cached),
@@ -161,7 +166,7 @@ async def get_profile_by_guid(
         environment=environment
     )
 
-    return await perfil_service.get_profile_by_guid(guid_perfil)
+    return await perfil_service.get_profile_by_guid(str(guid_perfil))
 
 
 @router.get(
@@ -186,7 +191,7 @@ async def get_profile_by_guid(
 )
 @endpoint_exception_handler
 async def get_profile_by_guid_usuario(
-    guid_usuario: str,
+    guid_usuario: GUID,
     _: usuario_schema.CurrentUserToken = Security(get_current_user, scopes=[]),
     session: AsyncSession = Depends(get_session),
     environment: Environment = Depends(get_environment_cached),
@@ -217,7 +222,7 @@ async def get_profile_by_guid_usuario(
         environment=environment
     )
 
-    return await perfil_service.get_profile_by_guid_usuario(guid_usuario)
+    return await perfil_service.get_profile_by_guid_usuario(str(guid_usuario))
 
 
 @router.get(
@@ -335,8 +340,8 @@ async def post_own_profile(
     "/user/me",
     response_model=PerfilUpdateOutput,
     summary='Atualiza o perfil do usuário atual.',
-    response_description='O perfil é atualizado e são retornadas as informações atualizadas. Note que algumas informações não são retornadas'
-    ', como os vínculos com as demais entidades',
+    response_description='O perfil é atualizado e são retornadas as informações atualizadas. '
+    'Note que algumas informações não são retornadas, como os vínculos com as demais entidades',
     responses={
         401: {
             'model': error_schema.ErrorOutput401,
@@ -455,7 +460,7 @@ async def delete_profile(
 
 
 @router.post(
-    "/user/me/link-course/{nome_referencia_curso}",
+    "/user/me/link-course/{id_curso}",
     tags=["VinculoCursoPerfil"],
     status_code=status.HTTP_201_CREATED,
     summary='Vincula um curso para o perfil do usuário atual',
@@ -479,7 +484,7 @@ async def delete_profile(
 )
 @endpoint_exception_handler
 async def link_course_to_own_profile(
-    nome_referencia_curso: str,
+    id_curso: int,
     current_user: usuario_schema.CurrentUserToken = Security(get_current_user, scopes=[]),
     session: AsyncSession = Depends(get_session),
     environment: Environment = Depends(get_environment_cached),
@@ -518,12 +523,12 @@ async def link_course_to_own_profile(
 
     guid_usuario = current_user.guid
 
-    await perfil_service.link_course_to_profile(guid_usuario, nome_referencia_curso)
+    await perfil_service.link_course_to_profile(guid_usuario, id_curso)
     return Response(status_code=status.HTTP_201_CREATED)
 
 
 @router.delete(
-    "/user/me/link-course/{nome_referencia_curso}",
+    "/user/me/link-course/{id_curso}",
     tags=["VinculoCursoPerfil"],
     status_code=status.HTTP_204_NO_CONTENT,
     summary='Deleta um vínculo de um curso com o perfil do usuário atual',
@@ -547,7 +552,7 @@ async def link_course_to_own_profile(
 )
 @endpoint_exception_handler
 async def delete_link_course_to_own_profile(
-    nome_referencia_curso: str,
+    id_curso: int,
     current_user: usuario_schema.CurrentUserToken = Security(get_current_user, scopes=[]),
     session: AsyncSession = Depends(get_session),
     environment: Environment = Depends(get_environment_cached),
@@ -586,7 +591,7 @@ async def delete_link_course_to_own_profile(
 
     guid_usuario = current_user.guid
 
-    await perfil_service.delete_profile_course_link(guid_usuario, nome_referencia_curso)
+    await perfil_service.delete_profile_course_link(guid_usuario, id_curso)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -596,7 +601,7 @@ async def delete_link_course_to_own_profile(
 
 
 @router.post(
-    "/user/me/link-interest/{nome_referencia_interesse}",
+    "/user/me/link-interest/{id_interesse}",
     tags=["VinculoInteressePerfil"],
     status_code=status.HTTP_201_CREATED,
     summary='Vincula um interesse para o perfil do usuário atual',
@@ -620,7 +625,7 @@ async def delete_link_course_to_own_profile(
 )
 @endpoint_exception_handler
 async def link_interest_to_own_profile(
-    nome_referencia_interesse: str,
+    id_interesse: int,
     current_user: usuario_schema.CurrentUserToken = Security(get_current_user, scopes=[]),
     session: AsyncSession = Depends(get_session),
     environment: Environment = Depends(get_environment_cached),
@@ -659,12 +664,12 @@ async def link_interest_to_own_profile(
 
     guid_usuario = current_user.guid
 
-    await perfil_service.link_interest_to_profile(guid_usuario, nome_referencia_interesse)
+    await perfil_service.link_interest_to_profile(guid_usuario, id_interesse)
     return Response(status_code=status.HTTP_201_CREATED)
 
 
 @router.delete(
-    "/user/me/link-interest/{nome_referencia_interesse}",
+    "/user/me/link-interest/{id_interesse}",
     tags=["VinculoInteressePerfil"],
     status_code=status.HTTP_204_NO_CONTENT,
     summary='Deleta um vínculo de um interesse com o perfil do usuário atual',
@@ -688,7 +693,7 @@ async def link_interest_to_own_profile(
 )
 @endpoint_exception_handler
 async def delete_link_course_to_own_profile(
-    nome_referencia_interesse: str,
+    id_interesse: int,
     current_user: usuario_schema.CurrentUserToken = Security(get_current_user, scopes=[]),
     session: AsyncSession = Depends(get_session),
     environment: Environment = Depends(get_environment_cached),
@@ -727,6 +732,384 @@ async def delete_link_course_to_own_profile(
 
     guid_usuario = current_user.guid
 
-    await perfil_service.delete_profile_interest_link(guid_usuario, nome_referencia_interesse)
+    await perfil_service.delete_profile_interest_link(guid_usuario, id_interesse)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+"""
+    PerfilEmail
+"""
+
+
+@router.post(
+    "/user/me/perfil-email",
+    tags=["PerfilEmail"],
+    response_model=PerfilEmailOutput,
+    summary='Insere uma entidade de e-mail para o perfil do usuário atual',
+    responses={
+        401: {
+            'model': error_schema.ErrorOutput401,
+        },
+        404: {
+            'model': error_schema.ErrorOutput404,
+        },
+        422: {
+            'model': error_schema.ErrorOutput422,
+        },
+        500: {
+            'model': error_schema.ErrorOutput500
+        }
+    }
+)
+@endpoint_exception_handler
+async def insert_email_to_own_profile(
+    perfil_email_input: PerfilEmailPostInput,
+    current_user: usuario_schema.CurrentUserToken = Security(get_current_user, scopes=[]),
+    session: AsyncSession = Depends(get_session),
+    environment: Environment = Depends(get_environment_cached),
+):
+
+    """
+        # Descrição
+
+        Insere uma entidade de email para o perfil do usuário atual.
+
+        # Erros
+
+        Segue a lista de erros, por (**error_id**, **status_code**), que podem ocorrer nesse endpoint:
+
+        - **(INVALID_OR_EXPIRED_TOKEN, 401)**: Token de acesso inválido ou expirado.
+        - **(PROFILE_NOT_FOUND, 404)**: Perfil não encontrado no sistema.
+        - **(REQUEST_VALIDATION_ERROR, 422)**: Validação padrão da requisição. O detalhamento é um JSON,
+        no formato de string, contendo os erros de validação encontrados.
+        - **(INTERNAL_SERVER_ERROR, 500)**: Erro interno no sistema
+
+    """
+
+    perfil_service = PerfilService(
+        perfil_repo=PerfilRepository(
+            db_session=session,
+            environment=environment
+        ),
+        environment=environment
+    )
+
+    guid_usuario = current_user.guid
+
+    return await perfil_service.insert_email_profile_by_guid_usuario(
+        guid_usuario,
+        perfil_email_input
+    )
+
+
+@router.put(
+    "/user/me/perfil-email/{guid_perfil_email}",
+    tags=["PerfilEmail"],
+    response_model=PerfilEmailOutput,
+    summary='Atualiza uma entidade de email para o perfil do usuário atual',
+    responses={
+        401: {
+            'model': error_schema.ErrorOutput401,
+        },
+        404: {
+            'model': error_schema.ErrorOutput404,
+        },
+        422: {
+            'model': error_schema.ErrorOutput422,
+        },
+        500: {
+            'model': error_schema.ErrorOutput500
+        }
+    }
+)
+@endpoint_exception_handler
+async def update_email_to_own_profile(
+    guid_perfil_email: GUID,
+    perfil_email_input: PerfilEmailUpdateInput,
+    _: usuario_schema.CurrentUserToken = Security(get_current_user, scopes=[]),
+    session: AsyncSession = Depends(get_session),
+    environment: Environment = Depends(get_environment_cached),
+):
+
+    """
+        # Descrição
+
+        Atualiza uma entidade de email para o perfil do usuário atual.
+
+        # Erros
+
+        Segue a lista de erros, por (**error_id**, **status_code**), que podem ocorrer nesse endpoint:
+
+        - **(INVALID_OR_EXPIRED_TOKEN, 401)**: Token de acesso inválido ou expirado.
+        - **(PROFILE_EMAIL_NOT_FOUND, 404)**: Entidade de email vinculada ao perfil não encontrado no sistema.
+        - **(REQUEST_VALIDATION_ERROR, 422)**: Validação padrão da requisição. O detalhamento é um JSON,
+        no formato de string, contendo os erros de validação encontrados.
+        - **(INTERNAL_SERVER_ERROR, 500)**: Erro interno no sistema
+
+    """
+
+    perfil_service = PerfilService(
+        perfil_repo=PerfilRepository(
+            db_session=session,
+            environment=environment
+        ),
+        environment=environment
+    )
+
+    return await perfil_service.update_email_profile_by_guid(
+        str(guid_perfil_email),
+        perfil_email_input
+    )
+
+
+@router.delete(
+    "/user/me/perfil-email/{guid_perfil_email}",
+    tags=["PerfilEmail"],
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary='Deleta uma entidade de email do perfil do usuário atual',
+    responses={
+        401: {
+            'model': error_schema.ErrorOutput401,
+        },
+        404: {
+            'model': error_schema.ErrorOutput404,
+        },
+        422: {
+            'model': error_schema.ErrorOutput422,
+        },
+        500: {
+            'model': error_schema.ErrorOutput500
+        }
+    }
+)
+@endpoint_exception_handler
+async def delete_email_to_own_profile(
+    guid_perfil_email: GUID,
+    _: usuario_schema.CurrentUserToken = Security(get_current_user, scopes=[]),
+    session: AsyncSession = Depends(get_session),
+    environment: Environment = Depends(get_environment_cached),
+):
+
+    """
+        # Descrição
+
+        Deleta uma entidade de email do perfil do usuário atual.
+
+        # Erros
+
+        Segue a lista de erros, por (**error_id**, **status_code**), que podem ocorrer nesse endpoint:
+
+        - **(INVALID_OR_EXPIRED_TOKEN, 401)**: Token de acesso inválido ou expirado.
+        - **(PROFILE_EMAIL_NOT_FOUND, 404)**: Entidade de email vinculada ao perfil não encontrado no sistema.
+        - **(REQUEST_VALIDATION_ERROR, 422)**: Validação padrão da requisição. O detalhamento é um JSON,
+        no formato de string, contendo os erros de validação encontrados.
+        - **(INTERNAL_SERVER_ERROR, 500)**: Erro interno no sistema
+
+    """
+
+    perfil_service = PerfilService(
+        perfil_repo=PerfilRepository(
+            db_session=session,
+            environment=environment
+        ),
+        environment=environment
+    )
+
+    await perfil_service.delete_email_profile_by_guid(
+        str(guid_perfil_email)
+    )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+"""
+    PerfilPhone
+"""
+
+
+@router.post(
+    "/user/me/perfil-phone",
+    tags=["PerfilPhone"],
+    response_model=PerfilPhoneOutput,
+    summary='Insere uma entidade de contato (Phone) para o perfil do usuário atual',
+    responses={
+        401: {
+            'model': error_schema.ErrorOutput401,
+        },
+        404: {
+            'model': error_schema.ErrorOutput404,
+        },
+        422: {
+            'model': error_schema.ErrorOutput422,
+        },
+        500: {
+            'model': error_schema.ErrorOutput500
+        }
+    }
+)
+@endpoint_exception_handler
+async def insert_phone_to_own_profile(
+    perfil_phone_input: PerfilPhonePostInput,
+    current_user: usuario_schema.CurrentUserToken = Security(get_current_user, scopes=[]),
+    session: AsyncSession = Depends(get_session),
+    environment: Environment = Depends(get_environment_cached),
+):
+
+    """
+        # Descrição
+
+        Insere uma entidade de phone para o perfil do usuário atual.
+
+        # Erros
+
+        Segue a lista de erros, por (**error_id**, **status_code**), que podem ocorrer nesse endpoint:
+
+        - **(INVALID_OR_EXPIRED_TOKEN, 401)**: Token de acesso inválido ou expirado.
+        - **(PROFILE_NOT_FOUND, 404)**: Perfil não encontrado no sistema.
+        - **(REQUEST_VALIDATION_ERROR, 422)**: Validação padrão da requisição. O detalhamento é um JSON,
+        no formato de string, contendo os erros de validação encontrados.
+        - **(INTERNAL_SERVER_ERROR, 500)**: Erro interno no sistema
+
+    """
+
+    perfil_service = PerfilService(
+        perfil_repo=PerfilRepository(
+            db_session=session,
+            environment=environment
+        ),
+        tipo_contato_repo=TipoContatoRepository(
+            db_session=session,
+            environment=environment
+        ),
+        environment=environment
+    )
+
+    guid_usuario = current_user.guid
+
+    return await perfil_service.insert_phone_profile_by_guid_usuario(
+        guid_usuario,
+        perfil_phone_input
+    )
+
+
+@router.put(
+    "/user/me/perfil-email/{guid_perfil_phone}",
+    tags=["PerfilPhone"],
+    response_model=PerfilPhoneOutput,
+    summary='Atualiza uma entidade de contato (Phone) para o perfil do usuário atual',
+    responses={
+        401: {
+            'model': error_schema.ErrorOutput401,
+        },
+        404: {
+            'model': error_schema.ErrorOutput404,
+        },
+        422: {
+            'model': error_schema.ErrorOutput422,
+        },
+        500: {
+            'model': error_schema.ErrorOutput500
+        }
+    }
+)
+@endpoint_exception_handler
+async def update_phone_to_own_profile(
+    guid_perfil_phone: GUID,
+    perfil_email_input: PerfilPhoneUpdateInput,
+    _: usuario_schema.CurrentUserToken = Security(get_current_user, scopes=[]),
+    session: AsyncSession = Depends(get_session),
+    environment: Environment = Depends(get_environment_cached),
+):
+
+    """
+        # Descrição
+
+        Atualiza uma entidade de email para o perfil do usuário atual.
+
+        # Erros
+
+        Segue a lista de erros, por (**error_id**, **status_code**), que podem ocorrer nesse endpoint:
+
+        - **(INVALID_OR_EXPIRED_TOKEN, 401)**: Token de acesso inválido ou expirado.
+        - **(PROFILE_PHONE_NOT_FOUND, 404)**: Entidade de contato (Phone) vinculada ao perfil não encontrado no sistema.
+        - **(REQUEST_VALIDATION_ERROR, 422)**: Validação padrão da requisição. O detalhamento é um JSON,
+        no formato de string, contendo os erros de validação encontrados.
+        - **(INTERNAL_SERVER_ERROR, 500)**: Erro interno no sistema
+
+    """
+
+    perfil_service = PerfilService(
+        perfil_repo=PerfilRepository(
+            db_session=session,
+            environment=environment
+        ),
+        tipo_contato_repo=TipoContatoRepository(
+            db_session=session,
+            environment=environment
+        ),
+        environment=environment
+    )
+
+    return await perfil_service.update_phone_profile_by_guid(
+        str(guid_perfil_phone),
+        perfil_email_input
+    )
+
+
+@router.delete(
+    "/user/me/perfil-email/{guid_perfil_phone}",
+    tags=["PerfilPhone"],
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary='Deleta uma entidade de contato (Phone) do perfil do usuário atual',
+    responses={
+        401: {
+            'model': error_schema.ErrorOutput401,
+        },
+        404: {
+            'model': error_schema.ErrorOutput404,
+        },
+        422: {
+            'model': error_schema.ErrorOutput422,
+        },
+        500: {
+            'model': error_schema.ErrorOutput500
+        }
+    }
+)
+@endpoint_exception_handler
+async def delete_email_to_own_profile(
+    guid_perfil_phone: GUID,
+    _: usuario_schema.CurrentUserToken = Security(get_current_user, scopes=[]),
+    session: AsyncSession = Depends(get_session),
+    environment: Environment = Depends(get_environment_cached),
+):
+
+    """
+        # Descrição
+
+        Deleta uma entidade de contato (Phone) do perfil do usuário atual.
+
+        # Erros
+
+        Segue a lista de erros, por (**error_id**, **status_code**), que podem ocorrer nesse endpoint:
+
+        - **(INVALID_OR_EXPIRED_TOKEN, 401)**: Token de acesso inválido ou expirado.
+        - **(PROFILE_PHONE_NOT_FOUND, 404)**: Entidade de contato (Phone) vinculada ao perfil não encontrado no sistema.
+        - **(REQUEST_VALIDATION_ERROR, 422)**: Validação padrão da requisição. O detalhamento é um JSON,
+        no formato de string, contendo os erros de validação encontrados.
+        - **(INTERNAL_SERVER_ERROR, 500)**: Erro interno no sistema
+
+    """
+
+    perfil_service = PerfilService(
+        perfil_repo=PerfilRepository(
+            db_session=session,
+            environment=environment
+        ),
+        environment=environment
+    )
+
+    await perfil_service.delete_phone_profile_by_guid(
+        str(guid_perfil_phone)
+    )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 

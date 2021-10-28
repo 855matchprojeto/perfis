@@ -174,6 +174,39 @@ class ProfileNotFoundException(ApiBaseException):
         super().__init__(status_code, error_id, message, detail)
 
 
+class TipoContatoNotFoundException(ApiBaseException):
+    def __init__(
+        self,
+        status_code=status.HTTP_404_NOT_FOUND,
+        error_id='CONTACTING_TYPE_NOT_FOUND',
+        message='O tipo de contato não foi encontrado no sistema',
+        detail=''
+    ) -> None:
+        super().__init__(status_code, error_id, message, detail)
+
+
+class ProfileEmailNotFoundException(ApiBaseException):
+    def __init__(
+        self,
+        status_code=status.HTTP_404_NOT_FOUND,
+        error_id='PROFILE_EMAIL_NOT_FOUND',
+        message='A entidade de email vinculada ao perfil não foi encontrado no sistema',
+        detail=''
+    ) -> None:
+        super().__init__(status_code, error_id, message, detail)
+
+
+class ProfilePhoneNotFoundException(ApiBaseException):
+    def __init__(
+        self,
+        status_code=status.HTTP_404_NOT_FOUND,
+        error_id='PROFILE_PHONE_NOT_FOUND',
+        message='A entidade de contato vinculada ao perfil não foi encontrado no sistema',
+        detail=''
+    ) -> None:
+        super().__init__(status_code, error_id, message, detail)
+
+
 class CourseNotFoundException(ApiBaseException):
     def __init__(
         self,
