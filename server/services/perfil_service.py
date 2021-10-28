@@ -23,6 +23,8 @@ from server.schemas.cursor_schema import Cursor
 from server.models.perfil_model import Perfil
 from server import utils
 from server.schemas.perfil_schema import PerfilPostInput, PerfilUpdateInput
+from server.models.curso_model import Curso
+from server.models.interesse_model import Interesse
 
 
 class PerfilService:
@@ -98,8 +100,16 @@ class PerfilService:
             perfil_input.guid_usuario == current_user.guid
         )
 
-    def __init__(self, perfil_repo: Optional[PerfilRepository] = None, environment: Optional[Environment] = None):
+    def __init__(
+        self,
+        perfil_repo: Optional[PerfilRepository] = None,
+        curso_repo: Optional[CursoRepository] = None,
+        interesse_repo: Optional[InteresseRepository] = None,
+        environment: Optional[Environment] = None
+    ):
         self.perfil_repo = perfil_repo
+        self.curso_repo = curso_repo
+        self.interesse_repo = interesse_repo
         self.environment = environment
 
     def decode_cursor_info(self, encoded_cursor: str):
@@ -135,6 +145,16 @@ class PerfilService:
         return paginated_profile_dict
 
     async def create_profile_by_guid_usuario(self, guid_usuario: str, profile_input: PerfilPostInput):
+        # Verificando se ja existe um perfil para o usuário
+        perfil_db = self.perfil_repo.find_profile_by_guid_usuario(
+            guid_usuario,
+            load_all_entities=False
+        )
+        if perfil_db:
+            raise exceptions.ProfileConflictException(
+                detail=f"Já existe um perfil cadastrado para o usuário {guid_usuario}"
+            )
+        # Lógica padrão do endpoint de inserção de perfil
         profile_dict = profile_input.convert_to_dict()
         profile_dict['guid_usuario'] = guid_usuario
         profile_dict['nome_exibicao_normalized'] = utils.normalize_string(profile_dict['nome_exibicao'])
@@ -146,5 +166,149 @@ class PerfilService:
         return await self.perfil_repo.atualiza_perfil_by_guid_usuario(guid_usuario, profile_dict)
 
     async def delete_profile_by_guid_usuario(self, guid_usuario: str):
-        return await self.perfil_repo.delete_perfil_by_guid_usuario(guid_usuario)
+        # Verificando se existe um usuario no banco
+        perfil = await self.perfil_repo.find_profile_by_guid_usuario(
+            guid_usuario, load_all_entities=False
+        )
+        if not perfil:
+            raise exceptions.ProfileNotFoundException(
+                detail=f"O perfil do usuário de GUID={guid_usuario} não foi encontrado."
+            )
+        # Capturando o ID do perfil
+        return await self.perfil_repo.delete_perfil(perfil.id)
 
+    async def link_course_to_profile(self, guid_usuario, nome_referencia_curso: str):
+        cursos = await self.curso_repo.find_all_courses_by_filters(
+            [Curso.nome_referencia == nome_referencia_curso]
+        )
+        if not cursos:
+            raise exceptions.CourseNotFoundException(
+                detail=f"Não foi encontrado um curso com nome de referência {nome_referencia_curso}"
+            )
+        curso = cursos[0]
+
+        perfil = await self.perfil_repo.find_profile_by_guid_usuario(
+            guid_usuario,
+            load_all_entities=False
+        )
+        if not perfil:
+            raise exceptions.ProfileNotFoundException(
+                detail=f"Não foi encontrado um perfil para o usuário {guid_usuario}"
+            )
+
+        vinculo_db = await self.perfil_repo.find_vinculo_perfil_curso(
+            curso.id,
+            perfil.id
+        )
+        if vinculo_db:
+            raise exceptions.CourseLinkConflictException(
+                detail=f"Já existe um vínculo do perfil do usuário {guid_usuario}"
+                       f" com o curso {nome_referencia_curso}"
+            )
+
+        await self.perfil_repo.insert_vinculo_perfil_curso(
+            curso.id,
+            perfil.id
+        )
+
+    async def delete_profile_course_link(self, guid_usuario, nome_referencia_curso: str):
+        cursos = await self.curso_repo.find_all_courses_by_filters(
+            [Curso.nome_referencia == nome_referencia_curso]
+        )
+        if not cursos:
+            raise exceptions.CourseNotFoundException(
+                detail=f"Não foi encontrado um curso com nome de referência {nome_referencia_curso}"
+            )
+        curso = cursos[0]
+
+        perfil = await self.perfil_repo.find_profile_by_guid_usuario(
+            guid_usuario,
+            load_all_entities=False
+        )
+        if not perfil:
+            raise exceptions.ProfileNotFoundException(
+                detail=f"Não foi encontrado um perfil para o usuário {guid_usuario}"
+            )
+
+        vinculo_db = await self.perfil_repo.find_vinculo_perfil_curso(
+            curso.id,
+            perfil.id
+        )
+        if not vinculo_db:
+            raise exceptions.CourseLinkNotFoundException(
+                detail=f"Não existe um vínculo do perfil do usuário {guid_usuario}"
+                       f" com o curso {nome_referencia_curso}"
+            )
+
+        await self.perfil_repo.delete_vinculo_perfil_curso(
+            curso.id,
+            perfil.id
+        )
+
+    async def link_interest_to_profile(self, guid_usuario, nome_referencia_interesse: str):
+        interesses = await self.interesse_repo.find_all_interests_by_filters(
+            [Interesse.nome_referencia == nome_referencia_interesse]
+        )
+        if not interesses:
+            raise exceptions.InterestNotFoundException(
+                detail=f"Não foi encontrado um interesse com nome de referência {nome_referencia_interesse}"
+            )
+        interesse = interesses[0]
+
+        perfil = await self.perfil_repo.find_profile_by_guid_usuario(
+            guid_usuario,
+            load_all_entities=False
+        )
+        if not perfil:
+            raise exceptions.ProfileNotFoundException(
+                detail=f"Não foi encontrado um perfil para o usuário {guid_usuario}"
+            )
+
+        vinculo_db = await self.perfil_repo.find_vinculo_perfil_interesse(
+            interesse.id,
+            perfil.id
+        )
+        if vinculo_db:
+            raise exceptions.InterestLinkConflictException(
+                detail=f"Já existe um vínculo do perfil do usuário {guid_usuario}"
+                       f" com o interesse {nome_referencia_interesse}"
+            )
+
+        await self.perfil_repo.insert_vinculo_perfil_interesse(
+            interesse.id,
+            perfil.id
+        )
+
+    async def delete_profile_interest_link(self, guid_usuario, nome_referencia_interesse: str):
+        interesses = await self.interesse_repo.find_all_interests_by_filters(
+            [Interesse.nome_referencia == nome_referencia_interesse]
+        )
+        if not interesses:
+            raise exceptions.InterestNotFoundException(
+                detail=f"Não foi encontrado um interesse com nome de referência {nome_referencia_interesse}"
+            )
+        interesse = interesses[0]
+
+        perfil = await self.perfil_repo.find_profile_by_guid_usuario(
+            guid_usuario,
+            load_all_entities=False
+        )
+        if not perfil:
+            raise exceptions.ProfileNotFoundException(
+                detail=f"Não foi encontrado um perfil para o usuário {guid_usuario}"
+            )
+
+        vinculo_db = await self.perfil_repo.find_vinculo_perfil_interesse(
+            interesse.id,
+            perfil.id
+        )
+        if not vinculo_db:
+            raise exceptions.InterestLinkNotFoundException(
+                detail=f"Não existe um vínculo do perfil do usuário {guid_usuario}"
+                       f" com o interesse {nome_referencia_interesse}"
+            )
+
+        await self.perfil_repo.delete_vinculo_perfil_interesse(
+            interesse.id,
+            perfil.id
+        )

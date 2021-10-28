@@ -15,6 +15,8 @@ from server.controllers import pagination_parameters
 from server.services.perfil_service import PerfilService
 from server.configuration.environment import Environment
 from server.repository.perfil_repository import PerfilRepository
+from server.repository.curso_repository import CursoRepository
+from server.repository.interesse_repository import InteresseRepository
 from server.schemas.perfil_schema import PaginatedPerfilOutput, PerfilOutput, PerfilPostInput, \
     PerfilUpdateInput, PerfilUpdateOutput
 from fastapi import Request, status
@@ -104,6 +106,7 @@ async def get_all_profiles(
     return await perfil_service.get_all_profiles_paginated(
         filter_params_dict, request, limit, offset
     )
+
 
 @router.get(
     "/{guid_perfil}",
@@ -443,5 +446,287 @@ async def delete_profile(
     guid_usuario = current_user.guid
 
     await perfil_service.delete_profile_by_guid_usuario(guid_usuario)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+"""
+    VinculoPerfilCurso
+"""
+
+
+@router.post(
+    "/user/me/link-course/{nome_referencia_curso}",
+    tags=["VinculoCursoPerfil"],
+    status_code=status.HTTP_201_CREATED,
+    summary='Vincula um curso para o perfil do usuário atual',
+    responses={
+        401: {
+            'model': error_schema.ErrorOutput401,
+        },
+        404: {
+            'model': error_schema.ErrorOutput404,
+        },
+        409: {
+            'model': error_schema.ErrorOutput409,
+        },
+        422: {
+            'model': error_schema.ErrorOutput422,
+        },
+        500: {
+            'model': error_schema.ErrorOutput500
+        }
+    }
+)
+@endpoint_exception_handler
+async def link_course_to_own_profile(
+    nome_referencia_curso: str,
+    current_user: usuario_schema.CurrentUserToken = Security(get_current_user, scopes=[]),
+    session: AsyncSession = Depends(get_session),
+    environment: Environment = Depends(get_environment_cached),
+):
+
+    """
+        # Descrição
+
+        Vincula um curso para o perfil do usuário atual.
+        O curso é referenciado pelo campo nome_referencia
+
+        # Erros
+
+        Segue a lista de erros, por (**error_id**, **status_code**), que podem ocorrer nesse endpoint:
+
+        - **(INVALID_OR_EXPIRED_TOKEN, 401)**: Token de acesso inválido ou expirado.
+        - **(PROFILE_NOT_FOUND, 404)**: Perfil não encontrado no sistema.
+        - **(COURSE_LINK_ALREADY_EXISTS, 409)**: Já existe um vínculo do curso com o perfil do usuário
+        - **(REQUEST_VALIDATION_ERROR, 422)**: Validação padrão da requisição. O detalhamento é um JSON,
+        no formato de string, contendo os erros de validação encontrados.
+        - **(INTERNAL_SERVER_ERROR, 500)**: Erro interno no sistema
+
+    """
+
+    perfil_service = PerfilService(
+        perfil_repo=PerfilRepository(
+            db_session=session,
+            environment=environment
+        ),
+        curso_repo=CursoRepository(
+            db_session=session,
+            environment=environment
+        ),
+        environment=environment
+    )
+
+    guid_usuario = current_user.guid
+
+    await perfil_service.link_course_to_profile(guid_usuario, nome_referencia_curso)
+    return Response(status_code=status.HTTP_201_CREATED)
+
+
+@router.delete(
+    "/user/me/link-course/{nome_referencia_curso}",
+    tags=["VinculoCursoPerfil"],
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary='Deleta um vínculo de um curso com o perfil do usuário atual',
+    responses={
+        401: {
+            'model': error_schema.ErrorOutput401,
+        },
+        404: {
+            'model': error_schema.ErrorOutput404,
+        },
+        409: {
+            'model': error_schema.ErrorOutput409,
+        },
+        422: {
+            'model': error_schema.ErrorOutput422,
+        },
+        500: {
+            'model': error_schema.ErrorOutput500
+        }
+    }
+)
+@endpoint_exception_handler
+async def delete_link_course_to_own_profile(
+    nome_referencia_curso: str,
+    current_user: usuario_schema.CurrentUserToken = Security(get_current_user, scopes=[]),
+    session: AsyncSession = Depends(get_session),
+    environment: Environment = Depends(get_environment_cached),
+):
+
+    """
+        # Descrição
+
+        Deleta um vincula do curso com o perfil do usuário atual.
+        O curso é referenciado pelo campo nome_referencia
+
+        # Erros
+
+        Segue a lista de erros, por (**error_id**, **status_code**), que podem ocorrer nesse endpoint:
+
+        - **(INVALID_OR_EXPIRED_TOKEN, 401)**: Token de acesso inválido ou expirado.
+        - **(PROFILE_NOT_FOUND, 404)**: Perfil não encontrado no sistema.
+        - **(COURSE_LINK_NOT_FOUND, 404)**: Não foi encontrado o vínculo do curso com o usuário
+        - **(REQUEST_VALIDATION_ERROR, 422)**: Validação padrão da requisição. O detalhamento é um JSON,
+        no formato de string, contendo os erros de validação encontrados.
+        - **(INTERNAL_SERVER_ERROR, 500)**: Erro interno no sistema
+
+    """
+
+    perfil_service = PerfilService(
+        perfil_repo=PerfilRepository(
+            db_session=session,
+            environment=environment
+        ),
+        curso_repo=CursoRepository(
+            db_session=session,
+            environment=environment
+        ),
+        environment=environment
+    )
+
+    guid_usuario = current_user.guid
+
+    await perfil_service.delete_profile_course_link(guid_usuario, nome_referencia_curso)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+"""
+    VinculoPerfilInteresse
+"""
+
+
+@router.post(
+    "/user/me/link-interest/{nome_referencia_interesse}",
+    tags=["VinculoInteressePerfil"],
+    status_code=status.HTTP_201_CREATED,
+    summary='Vincula um interesse para o perfil do usuário atual',
+    responses={
+        401: {
+            'model': error_schema.ErrorOutput401,
+        },
+        404: {
+            'model': error_schema.ErrorOutput404,
+        },
+        409: {
+            'model': error_schema.ErrorOutput409,
+        },
+        422: {
+            'model': error_schema.ErrorOutput422,
+        },
+        500: {
+            'model': error_schema.ErrorOutput500
+        }
+    }
+)
+@endpoint_exception_handler
+async def link_interest_to_own_profile(
+    nome_referencia_interesse: str,
+    current_user: usuario_schema.CurrentUserToken = Security(get_current_user, scopes=[]),
+    session: AsyncSession = Depends(get_session),
+    environment: Environment = Depends(get_environment_cached),
+):
+
+    """
+        # Descrição
+
+        Vincula um interesse para o perfil do usuário atual.
+        O interesse é referenciado pelo campo nome_referencia
+
+        # Erros
+
+        Segue a lista de erros, por (**error_id**, **status_code**), que podem ocorrer nesse endpoint:
+
+        - **(INVALID_OR_EXPIRED_TOKEN, 401)**: Token de acesso inválido ou expirado.
+        - **(PROFILE_NOT_FOUND, 404)**: Perfil não encontrado no sistema.
+        - **(INTEREST_LINK_ALREADY_EXISTS, 409)**: Já existe um vínculo do interesse com o perfil do usuário
+        - **(REQUEST_VALIDATION_ERROR, 422)**: Validação padrão da requisição. O detalhamento é um JSON,
+        no formato de string, contendo os erros de validação encontrados.
+        - **(INTERNAL_SERVER_ERROR, 500)**: Erro interno no sistema
+
+    """
+
+    perfil_service = PerfilService(
+        perfil_repo=PerfilRepository(
+            db_session=session,
+            environment=environment
+        ),
+        interesse_repo=InteresseRepository(
+            db_session=session,
+            environment=environment
+        ),
+        environment=environment
+    )
+
+    guid_usuario = current_user.guid
+
+    await perfil_service.link_interest_to_profile(guid_usuario, nome_referencia_interesse)
+    return Response(status_code=status.HTTP_201_CREATED)
+
+
+@router.delete(
+    "/user/me/link-interest/{nome_referencia_interesse}",
+    tags=["VinculoInteressePerfil"],
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary='Deleta um vínculo de um interesse com o perfil do usuário atual',
+    responses={
+        401: {
+            'model': error_schema.ErrorOutput401,
+        },
+        404: {
+            'model': error_schema.ErrorOutput404,
+        },
+        409: {
+            'model': error_schema.ErrorOutput409,
+        },
+        422: {
+            'model': error_schema.ErrorOutput422,
+        },
+        500: {
+            'model': error_schema.ErrorOutput500
+        }
+    }
+)
+@endpoint_exception_handler
+async def delete_link_course_to_own_profile(
+    nome_referencia_interesse: str,
+    current_user: usuario_schema.CurrentUserToken = Security(get_current_user, scopes=[]),
+    session: AsyncSession = Depends(get_session),
+    environment: Environment = Depends(get_environment_cached),
+):
+
+    """
+        # Descrição
+
+        Deleta um vincula do interesse com o perfil do usuário atual.
+        O interesse é referenciado pelo campo nome_referencia
+
+        # Erros
+
+        Segue a lista de erros, por (**error_id**, **status_code**), que podem ocorrer nesse endpoint:
+
+        - **(INVALID_OR_EXPIRED_TOKEN, 401)**: Token de acesso inválido ou expirado.
+        - **(PROFILE_NOT_FOUND, 404)**: Perfil não encontrado no sistema.
+        - **(INTEREST_LINK_NOT_FOUND, 404)**: Não foi encontrado o vínculo do interesse com o usuário
+        - **(REQUEST_VALIDATION_ERROR, 422)**: Validação padrão da requisição. O detalhamento é um JSON,
+        no formato de string, contendo os erros de validação encontrados.
+        - **(INTERNAL_SERVER_ERROR, 500)**: Erro interno no sistema
+
+    """
+
+    perfil_service = PerfilService(
+        perfil_repo=PerfilRepository(
+            db_session=session,
+            environment=environment
+        ),
+        interesse_repo=InteresseRepository(
+            db_session=session,
+            environment=environment
+        ),
+        environment=environment
+    )
+
+    guid_usuario = current_user.guid
+
+    await perfil_service.delete_profile_interest_link(guid_usuario, nome_referencia_interesse)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 

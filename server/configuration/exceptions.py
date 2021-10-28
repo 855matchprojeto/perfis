@@ -97,6 +97,39 @@ class EmailConflictException(ApiBaseException):
         super().__init__(status_code, error_id, message, detail)
 
 
+class CourseLinkConflictException(ApiBaseException):
+    def __init__(
+        self,
+        status_code=status.HTTP_409_CONFLICT,
+        error_id='COURSE_LINK_ALREADY_EXISTS',
+        message='Já existe um vínculo do curso com o perfil',
+        detail=''
+    ) -> None:
+        super().__init__(status_code, error_id, message, detail)
+
+
+class ProfileConflictException(ApiBaseException):
+    def __init__(
+        self,
+        status_code=status.HTTP_409_CONFLICT,
+        error_id='PROFILE_ALREADY_EXISTS',
+        message='Já existe um perfil para o usuário',
+        detail=''
+    ) -> None:
+        super().__init__(status_code, error_id, message, detail)
+
+
+class InterestLinkConflictException(ApiBaseException):
+    def __init__(
+        self,
+        status_code=status.HTTP_409_CONFLICT,
+        error_id='INTEREST_LINK_ALREADY_EXISTS',
+        message='Já existe um vínculo do curso com o perfil',
+        detail=''
+    ) -> None:
+        super().__init__(status_code, error_id, message, detail)
+
+
 class UserNotFoundException(ApiBaseException):
     def __init__(
         self,
@@ -108,12 +141,56 @@ class UserNotFoundException(ApiBaseException):
         super().__init__(status_code, error_id, message, detail)
 
 
+class CourseLinkNotFoundException(ApiBaseException):
+    def __init__(
+        self,
+        status_code=status.HTTP_404_NOT_FOUND,
+        error_id='COURSE_LINK_NOT_FOUND',
+        message='Não foi encontrado um vínculo do curso com o perfil do usuário',
+        detail=''
+    ) -> None:
+        super().__init__(status_code, error_id, message, detail)
+
+
+class InterestLinkNotFoundException(ApiBaseException):
+    def __init__(
+        self,
+        status_code=status.HTTP_404_NOT_FOUND,
+        error_id='INTEREST_LINK_NOT_FOUND',
+        message='Não foi encontrado um vínculo do interesse com o perfil do usuário',
+        detail=''
+    ) -> None:
+        super().__init__(status_code, error_id, message, detail)
+
+
 class ProfileNotFoundException(ApiBaseException):
     def __init__(
         self,
         status_code=status.HTTP_404_NOT_FOUND,
         error_id='PROFILE_NOT_FOUND',
         message='O perfil não foi encontrado no sistema',
+        detail=''
+    ) -> None:
+        super().__init__(status_code, error_id, message, detail)
+
+
+class CourseNotFoundException(ApiBaseException):
+    def __init__(
+        self,
+        status_code=status.HTTP_404_NOT_FOUND,
+        error_id='COURSE_NOT_FOUND',
+        message='O curso não foi encontrado no sistema',
+        detail=''
+    ) -> None:
+        super().__init__(status_code, error_id, message, detail)
+
+
+class InterestNotFoundException(ApiBaseException):
+    def __init__(
+        self,
+        status_code=status.HTTP_404_NOT_FOUND,
+        error_id='INTEREST_NOT_FOUND',
+        message='O interesse não foi encontrado no sistema',
         detail=''
     ) -> None:
         super().__init__(status_code, error_id, message, detail)

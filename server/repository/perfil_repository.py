@@ -144,10 +144,6 @@ class PerfilRepository:
         query = await self.db_session.execute(stmt)
 
         perfil = query.scalars().unique().first()
-        if not perfil:
-            raise ProfileNotFoundException(
-                detail=f"O perfil do usuário de GUID={guid_usuario} não foi encontrado."
-            )
         return perfil
 
     async def find_profiles_by_filters_paginated(self, limit, cursor: Cursor, filters) -> dict:
@@ -277,12 +273,7 @@ class PerfilRepository:
         # Deleta a entidade principal
         await self.delete_perfil_by_id(id_perfil)
 
-    async def delete_perfil_by_guid_usuario(self, guid_usuario) -> None:
-
-        # Capturando o ID do perfil
-        perfil = await self.find_profile_by_guid_usuario(guid_usuario, load_all_entities=False)
-        id_perfil = perfil.id
-
+    async def delete_perfil(self, id_perfil) -> None:
         # Deletando as entidades relacionadas
         await self.delete_vinculos_interesse_perfil(id_perfil)
         await self.delete_vinculos_curso_perfil(id_perfil)
@@ -291,3 +282,78 @@ class PerfilRepository:
 
         # Deleta a entidade principal
         await self.delete_perfil_by_id(id_perfil)
+
+    async def find_vinculo_perfil_curso(self, id_curso, id_perfil):
+        stmt = (
+            select(VinculoPerfilCurso).
+            where(
+                VinculoPerfilCurso.id_perfil == id_perfil,
+                VinculoPerfilCurso.id_curso == id_curso
+            )
+        )
+
+        # Executando a query
+        query = await self.db_session.execute(stmt)
+        return query.scalars().unique().first()
+
+    async def insert_vinculo_perfil_curso(self, id_curso, id_perfil):
+        stmt = (
+            insert(VinculoPerfilCurso).
+            values(
+                id_curso=id_curso,
+                id_perfil=id_perfil
+            )
+        )
+
+        # Executando a query
+        await self.db_session.execute(stmt)
+
+    async def delete_vinculo_perfil_curso(self, id_curso, id_perfil):
+        stmt = (
+            delete(VinculoPerfilCurso).
+            where(
+                VinculoPerfilCurso.id_perfil == id_perfil,
+                VinculoPerfilCurso.id_curso == id_curso
+            )
+        )
+
+        # Executando a query
+        await self.db_session.execute(stmt)
+
+    async def find_vinculo_perfil_interesse(self, id_interesse, id_perfil):
+        stmt = (
+            select(VinculoPerfilInteresse).
+            where(
+                VinculoPerfilInteresse.id_perfil == id_perfil,
+                VinculoPerfilInteresse.id_interesse == id_interesse
+            )
+        )
+
+        # Executando a query
+        query = await self.db_session.execute(stmt)
+        return query.scalars().unique().first()
+
+    async def insert_vinculo_perfil_interesse(self, id_interesse, id_perfil):
+        stmt = (
+            insert(VinculoPerfilInteresse).
+            values(
+                id_interesse=id_interesse,
+                id_perfil=id_perfil
+            )
+        )
+
+        # Executando a query
+        await self.db_session.execute(stmt)
+
+    async def delete_vinculo_perfil_interesse(self, id_interesse, id_perfil):
+        stmt = (
+            delete(VinculoPerfilInteresse).
+            where(
+                VinculoPerfilInteresse.id_perfil == id_perfil,
+                VinculoPerfilInteresse.id_interesse == id_interesse
+            )
+        )
+
+        # Executando a query
+        await self.db_session.execute(stmt)
+
