@@ -428,10 +428,10 @@ class PerfilService:
     ):
 
         # Procurando a entidade de PerfilPhone a partir do guid do perfil_phone
-        perfil_email = await self.perfil_repo.find_perfil_email_by_guid(
+        perfil_phone = await self.perfil_repo.find_perfil_phone_by_guid(
             guid_perfil_phone
         )
-        if not perfil_email:
+        if not perfil_phone:
             raise exceptions.ProfilePhoneNotFoundException(
                 detail=f"Não foi encontrado a entidade de PerfilPhone de GUID = {guid_perfil_phone}"
             )

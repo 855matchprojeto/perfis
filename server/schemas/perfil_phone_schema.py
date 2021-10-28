@@ -8,7 +8,7 @@ from server.schemas.tipo_contato_schema import TipoContatoOutput
 class PerfilPhonePostInput(BaseModel):
 
     phone: str = Field(example='19999999999')
-    id_tipo_contato: int = Field(example='1')
+    id_tipo_contato: Optional[int] = Field(None, example='1')
 
     def convert_to_dict(self):
         return self.dict()
@@ -20,8 +20,8 @@ class PerfilPhonePostInput(BaseModel):
 
 class PerfilPhoneUpdateInput(BaseModel):
 
-    phone: str = Field(example='19999999999')
-    id_tipo_contato: int = Field(example='1')
+    phone: Optional[str] = Field(example='19999999999')
+    id_tipo_contato: Optional[int] = Field(example='1')
 
     def convert_to_dict(self):
         return self.dict()

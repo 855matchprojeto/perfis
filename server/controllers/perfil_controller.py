@@ -28,8 +28,8 @@ from server.repository.tipo_contato_repository import TipoContatoRepository
 
 
 async def all_profiles_query_params(
-    interests_in: Optional[List[str]] = perfil_schema.InterestQuery,
-    courses_in: Optional[List[str]] = perfil_schema.CourseQuery,
+    interests_in: Optional[List[int]] = perfil_schema.InterestQuery,
+    courses_in: Optional[List[int]] = perfil_schema.CourseQuery,
     display_name_ilike: Optional[str] = perfil_schema.DisplayNameIlikeQuery
 ):
     return {
@@ -291,6 +291,9 @@ async def get_own_profile(
         401: {
             'model': error_schema.ErrorOutput401,
         },
+        409: {
+            'model': error_schema.ErrorOutput409,
+        },
         422: {
             'model': error_schema.ErrorOutput422,
         },
@@ -317,6 +320,7 @@ async def post_own_profile(
         Segue a lista de erros, por (**error_id**, **status_code**), que podem ocorrer nesse endpoint:
 
         - **(INVALID_OR_EXPIRED_TOKEN, 401)**: Token de acesso inválido ou expirado.
+        - **(PROFILE_ALREADY_EXISTS, 409)**: Já existe um perfil para o usuário atual.
         - **(REQUEST_VALIDATION_ERROR, 422)**: Validação padrão da requisição. O detalhamento é um JSON,
         no formato de string, contendo os erros de validação encontrados.
         - **(INTERNAL_SERVER_ERROR, 500)**: Erro interno no sistema
@@ -992,7 +996,7 @@ async def insert_phone_to_own_profile(
 
 
 @router.put(
-    "/user/me/perfil-email/{guid_perfil_phone}",
+    "/user/me/perfil-phone/{guid_perfil_phone}",
     tags=["PerfilPhone"],
     response_model=PerfilPhoneOutput,
     summary='Atualiza uma entidade de contato (Phone) para o perfil do usuário atual',
@@ -1012,7 +1016,7 @@ async def insert_phone_to_own_profile(
     }
 )
 @endpoint_exception_handler
-async def update_phone_to_own_profile(
+async def update_phone_own_profile(
     guid_perfil_phone: GUID,
     perfil_email_input: PerfilPhoneUpdateInput,
     _: usuario_schema.CurrentUserToken = Security(get_current_user, scopes=[]),
@@ -1056,7 +1060,7 @@ async def update_phone_to_own_profile(
 
 
 @router.delete(
-    "/user/me/perfil-email/{guid_perfil_phone}",
+    "/user/me/perfil-phone/{guid_perfil_phone}",
     tags=["PerfilPhone"],
     status_code=status.HTTP_204_NO_CONTENT,
     summary='Deleta uma entidade de contato (Phone) do perfil do usuário atual',
@@ -1076,7 +1080,7 @@ async def update_phone_to_own_profile(
     }
 )
 @endpoint_exception_handler
-async def delete_email_to_own_profile(
+async def delete_phone_own_profile(
     guid_perfil_phone: GUID,
     _: usuario_schema.CurrentUserToken = Security(get_current_user, scopes=[]),
     session: AsyncSession = Depends(get_session),

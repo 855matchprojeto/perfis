@@ -14,9 +14,9 @@ from server.models.curso_model import Curso
 class CursoRepository:
 
     @staticmethod
-    def get_courses_in_filter(courses: List[str]):
+    def get_courses_in_filter(courses: List[int]):
         return [
-            Curso.nome_referencia.in_(courses)
+            Curso.id.in_(courses)
         ]
 
     def __init__(self, db_session: AsyncSession, environment: Optional[Environment] = None):

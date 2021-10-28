@@ -9,9 +9,9 @@ from sqlalchemy import select
 class InteresseRepository:
 
     @staticmethod
-    def get_interests_in_filter(interests: List[str]):
+    def get_interests_in_filter(interests: List[int]):
         return [
-            Interesse.nome_referencia.in_(interests)
+            Interesse.id.in_(interests)
         ]
 
     def __init__(self, db_session: AsyncSession, environment: Optional[Environment] = None):

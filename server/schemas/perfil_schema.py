@@ -14,14 +14,14 @@ from typing import Any, Optional, Literal
 
 InterestQuery = Query(
     None,
-    title="Query string para filtrar perfis a partir dos nomes de referência dos interesses listados no perfil do usuário",
-    description="Query string para filtrar perfis a partir dos nomes de referência dos interesses listados no perfil do usuário",
+    title="Query string para filtrar perfis a partir dos IDS dos interesses vinculados ao perfil do usuário",
+    description="Query string para filtrar perfis a partir dos IDS dos interesses vinculados ao perfil do usuário"
 )
 
 CourseQuery = Query(
     None,
-    title="Query string para filtrar perfis a partir dos nomes de referência dos cursos listados no perfil do usuário",
-    description="Query string para filtrar perfis a partir dos nomes de referência dos cursos listados no perfil do usuário",
+    title="Query string para filtrar perfis a partir dos IDS dos cursos vinculados ao perfil do usuário",
+    description="Query string para filtrar perfis a partir dos IDS dos cursos vinculados ao perfil do usuário",
 )
 
 DisplayNameIlikeQuery = Query(
