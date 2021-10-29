@@ -22,13 +22,13 @@ from server.repository.curso_repository import CursoRepository
 from server.schemas.cursor_schema import Cursor
 from server.models.perfil_model import Perfil
 from server import utils
-from server.schemas.perfil_schema import PerfilPostInput, PerfilUpdateInput
+from server.schemas.perfil_schema import PerfilPostInput, PerfilPatchInput, PerfilPatchOutput
 from server.models.curso_model import Curso
 from server.models.interesse_model import Interesse
 from server.schemas.perfil_email_schema import PerfilEmailOutput, PerfilEmailPostInput, \
-    PerfilEmailUpdateInput
+    PerfilEmailPatchInput
 from server.models.perfil_email_model import PerfilEmail
-from server.schemas.perfil_phone_schema import PerfilPhoneOutput, PerfilPhonePostInput, PerfilPhoneUpdateInput
+from server.schemas.perfil_phone_schema import PerfilPhoneOutput, PerfilPhonePostInput, PerfilPhonePatchInput
 from server.repository.tipo_contato_repository import TipoContatoRepository
 from server.models.tipo_contato_model import TipoContato
 
@@ -173,12 +173,24 @@ class PerfilService:
         # Lógica padrão do endpoint de inserção de perfil
         profile_dict = profile_input.convert_to_dict()
         profile_dict['guid_usuario'] = guid_usuario
-        profile_dict['nome_exibicao_normalized'] = utils.normalize_string(profile_dict['nome_exibicao'])
+        # Preenchendo nome exibição e normalizacao se existir
+        nome_exibicao = profile_dict.get('nome_exibicao')
+        profile_dict['nome_exibicao_normalized'] = (
+            utils.normalize_string(nome_exibicao)
+            if nome_exibicao
+            else None
+        )
         return await self.perfil_repo.insere_perfil(profile_dict)
 
-    async def update_profile_by_guid_usuario(self, guid_usuario: str, profile_input: PerfilUpdateInput):
+    async def patch_profile_by_guid_usuario(self, guid_usuario: str, profile_input: PerfilPatchInput):
         profile_dict = profile_input.convert_to_dict()
-        profile_dict['nome_exibicao_normalized'] = utils.normalize_string(profile_dict['nome_exibicao'])
+        # Preenchendo nome exibição e normalizacao se existir
+        nome_exibicao = profile_dict.get('nome_exibicao')
+        profile_dict['nome_exibicao_normalized'] = (
+            utils.normalize_string(nome_exibicao)
+            if nome_exibicao
+            else None
+        )
         return await self.perfil_repo.atualiza_perfil_by_guid_usuario(guid_usuario, profile_dict)
 
     async def delete_profile_by_guid_usuario(self, guid_usuario: str):
@@ -348,8 +360,8 @@ class PerfilService:
         perfil_email_dict['id_perfil'] = perfil.id
         return await self.perfil_repo.insert_email_profile(perfil_email_dict)
 
-    async def update_email_profile_by_guid(
-        self, guid_perfil_email: str, perfil_email_update_input: PerfilEmailUpdateInput
+    async def patch_email_profile_by_guid(
+        self, guid_perfil_email: str, perfil_email_patch_input: PerfilEmailPatchInput
     ):
 
         # Procurando a entidade de PerfilEmail a partir do guid do perfil_email
@@ -362,10 +374,10 @@ class PerfilService:
             )
 
         # Inserindo no banco de dados
-        perfil_email_update_dict = perfil_email_update_input.convert_to_dict()
+        perfil_email_patch_dict = perfil_email_patch_input.convert_to_dict()
         return await self.perfil_repo.atualiza_email_profile(
             guid_perfil_email,
-            perfil_email_update_dict
+            perfil_email_patch_dict
         )
 
     async def delete_email_profile_by_guid(
@@ -419,12 +431,10 @@ class PerfilService:
         perfil_phone_dict = perfil_phone_input.convert_to_dict()
         perfil_phone_dict['id_perfil'] = perfil.id
         perfil = await self.perfil_repo.insert_phone_profile(perfil_phone_dict)
-        perfil.tipo_contato = tipo_contato
-
         return perfil
 
-    async def update_phone_profile_by_guid(
-        self, guid_perfil_phone: str, perfil_phone_update_input: PerfilPhoneUpdateInput
+    async def patch_phone_profile_by_guid(
+        self, guid_perfil_phone: str, perfil_phone_patch_input: PerfilPhonePatchInput
     ):
 
         # Procurando a entidade de PerfilPhone a partir do guid do perfil_phone
@@ -436,10 +446,8 @@ class PerfilService:
                 detail=f"Não foi encontrado a entidade de PerfilPhone de GUID = {guid_perfil_phone}"
             )
 
-        # Verificando se tipo_contato é válido
-        id_tipo_contato = perfil_phone_update_input.id_tipo_contato
-        tipo_contato = None
-
+        # Verificando se o novo tipo_contato é válido
+        id_tipo_contato = perfil_phone_patch_input.id_tipo_contato
         if id_tipo_contato is not None:
             tipos_contato = await self.tipo_contato_repo.find_all_tipos_contato_by_filters(
                 [TipoContato.id == id_tipo_contato]
@@ -448,18 +456,13 @@ class PerfilService:
                 raise exceptions.TipoContatoNotFoundException(
                     detail=f"Não foi encontrado um tipo de contato com o ID = {id_tipo_contato}"
                 )
-            else:
-                tipo_contato = tipos_contato[0]
 
         # Inserindo no banco de dados
-        perfil_phone_update_dict = perfil_phone_update_input.convert_to_dict()
-        perfil = await self.perfil_repo.atualiza_phone_profile(
+        perfil_phone_patch_dict = perfil_phone_patch_input.convert_to_dict()
+        return await self.perfil_repo.atualiza_phone_profile(
             guid_perfil_phone,
-            perfil_phone_update_dict
+            perfil_phone_patch_dict
         )
-        perfil.tipo_contato = tipo_contato
-
-        return perfil
 
     async def delete_phone_profile_by_guid(
         self, guid_perfil_phone: str

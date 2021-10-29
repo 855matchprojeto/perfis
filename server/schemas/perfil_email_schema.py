@@ -16,12 +16,12 @@ class PerfilEmailPostInput(BaseModel):
         arbitrary_types_allowed = True
 
 
-class PerfilEmailUpdateInput(BaseModel):
+class PerfilEmailPatchInput(BaseModel):
 
     email: EmailStr = Field(example='teste@unicamp.br')
 
     def convert_to_dict(self):
-        return self.dict()
+        return self.dict(exclude_unset=True)
 
     class Config:
         orm_mode = True

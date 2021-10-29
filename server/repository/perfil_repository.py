@@ -18,6 +18,7 @@ from server.models.curso_model import Curso
 from server import utils
 from sqlalchemy.sql import operators
 from server.configuration.exceptions import ProfileNotFoundException
+from server.models.tipo_contato_model import TipoContato
 
 
 class PerfilRepository:
@@ -69,8 +70,9 @@ class PerfilRepository:
 
     @staticmethod
     def get_all_entities_select_statement():
-        stmt = select(Perfil, VinculoPerfilCurso, VinculoPerfilInteresse, PerfilPhone).\
-            outerjoin(
+        stmt = (
+            select(Perfil)
+            .outerjoin(
                 VinculoPerfilCurso,
                 VinculoPerfilCurso.id_perfil == Perfil.id,
             ).outerjoin(
@@ -81,22 +83,23 @@ class PerfilRepository:
                 VinculoPerfilInteresse.id_perfil == Perfil.id,
             ).outerjoin(
                 Interesse,
-                VinculoPerfilInteresse.id_interesse == Interesse.id,
-            ).outerjoin(
-                PerfilPhone,
-                PerfilPhone.id_perfil == Perfil.id
-            ).outerjoin(
-                PerfilEmail,
-                PerfilEmail.id_perfil == Perfil.id
+                VinculoPerfilInteresse.id_interesse == Interesse.id
             ).options(
-                selectinload(Perfil.vinculos_perfil_curso),
-                selectinload(Perfil.vinculos_perfil_interesse),
-                selectinload(Perfil.phones),
-                selectinload(PerfilPhone.tipo_contato),
-                selectinload(Perfil.emails),
-                selectinload(VinculoPerfilInteresse.interesse),
-                selectinload(VinculoPerfilCurso.curso)
+                (
+                    selectinload(Perfil.vinculos_perfil_curso).
+                    selectinload(VinculoPerfilCurso.curso)
+                ),
+                (
+                    selectinload(Perfil.vinculos_perfil_interesse).
+                    selectinload(VinculoPerfilInteresse.interesse)
+                ),
+                (
+                    selectinload(Perfil.phones).
+                    selectinload(PerfilPhone.tipo_contato)
+                ),
+                selectinload(Perfil.emails)
             )
+        )
         return stmt
 
     @staticmethod
@@ -428,6 +431,13 @@ class PerfilRepository:
     async def find_perfil_phone_by_guid(self, perfil_phone_guid: str):
         stmt = (
             select(PerfilPhone).
+            outerjoin(
+                TipoContato,
+                TipoContato.id == PerfilPhone.id_tipo_contato
+            ).
+            options(
+                selectinload(PerfilPhone.tipo_contato)
+            ).
             where(
                 PerfilPhone.guid == perfil_phone_guid
             )

@@ -44,20 +44,20 @@ class PerfilPostInput(BaseModel):
         arbitrary_types_allowed = True
 
 
-class PerfilUpdateInput(BaseModel):
+class PerfilPatchInput(BaseModel):
 
     nome_exibicao: Optional[str] = Field(example="Nome de exibição do usuário no perfil")
     bio: Optional[str] = Field(example='Texto de apresentação do usuário')
 
     def convert_to_dict(self):
-        return self.dict()
+        return self.dict(exclude_unset=True)
 
     class Config:
         orm_mode = True
         arbitrary_types_allowed = True
 
 
-class PerfilUpdateOutput(BaseModel):
+class PerfilPatchOutput(BaseModel):
 
     """
         Seria muito custoso mostrar informações de interesses, cursos,

@@ -18,12 +18,12 @@ from server.repository.perfil_repository import PerfilRepository
 from server.repository.curso_repository import CursoRepository
 from server.repository.interesse_repository import InteresseRepository
 from server.schemas.perfil_schema import PaginatedPerfilOutput, PerfilOutput, PerfilPostInput, \
-    PerfilUpdateInput, PerfilUpdateOutput
+    PerfilPatchInput, PerfilPatchOutput
 from fastapi import Request, status
 from uuid import UUID as GUID
 from server.models.perfil_email_model import PerfilEmail
-from server.schemas.perfil_email_schema import PerfilEmailUpdateInput, PerfilEmailOutput, PerfilEmailPostInput
-from server.schemas.perfil_phone_schema import PerfilPhoneOutput, PerfilPhoneUpdateInput, PerfilPhonePostInput
+from server.schemas.perfil_email_schema import PerfilEmailPatchInput, PerfilEmailOutput, PerfilEmailPostInput
+from server.schemas.perfil_phone_schema import PerfilPhoneOutput, PerfilPhonePatchInput, PerfilPhonePostInput
 from server.repository.tipo_contato_repository import TipoContatoRepository
 
 
@@ -340,9 +340,9 @@ async def post_own_profile(
     return await perfil_service.create_profile_by_guid_usuario(guid_usuario, perfil_input)
 
 
-@router.put(
+@router.patch(
     "/user/me",
-    response_model=PerfilUpdateOutput,
+    response_model=PerfilPatchOutput,
     summary='Atualiza o perfil do usuário atual.',
     response_description='O perfil é atualizado e são retornadas as informações atualizadas. '
     'Note que algumas informações não são retornadas, como os vínculos com as demais entidades',
@@ -362,8 +362,8 @@ async def post_own_profile(
     }
 )
 @endpoint_exception_handler
-async def put_own_profile(
-    perfil_input: PerfilUpdateInput,
+async def patch_own_profile(
+    perfil_input: PerfilPatchInput,
     current_user: usuario_schema.CurrentUserToken = Security(get_current_user, scopes=[]),
     session: AsyncSession = Depends(get_session),
     environment: Environment = Depends(get_environment_cached),
@@ -373,7 +373,10 @@ async def put_own_profile(
         # Descrição
 
         Atualiza o perfil do usuário atual a partir dos campos definidos no corpo da requisição.
-        Note que a respostas é mais "enxuta" e não retorna os vínculos com as outras entidades.
+
+        Apenas os campos enviados no corpo da requisição são atualizados.
+
+        Note que a resposta é mais "enxuta" e não retorna os vínculos com as outras entidades.
 
         # Erros
 
@@ -397,7 +400,7 @@ async def put_own_profile(
 
     guid_usuario = current_user.guid
 
-    return await perfil_service.update_profile_by_guid_usuario(guid_usuario, perfil_input)
+    return await perfil_service.patch_profile_by_guid_usuario(guid_usuario, perfil_input)
 
 
 @router.delete(
@@ -806,7 +809,7 @@ async def insert_email_to_own_profile(
     )
 
 
-@router.put(
+@router.patch(
     "/user/me/perfil-email/{guid_perfil_email}",
     tags=["PerfilEmail"],
     response_model=PerfilEmailOutput,
@@ -827,9 +830,9 @@ async def insert_email_to_own_profile(
     }
 )
 @endpoint_exception_handler
-async def update_email_to_own_profile(
+async def patch_email_to_own_profile(
     guid_perfil_email: GUID,
-    perfil_email_input: PerfilEmailUpdateInput,
+    perfil_email_input: PerfilEmailPatchInput,
     _: usuario_schema.CurrentUserToken = Security(get_current_user, scopes=[]),
     session: AsyncSession = Depends(get_session),
     environment: Environment = Depends(get_environment_cached),
@@ -839,6 +842,7 @@ async def update_email_to_own_profile(
         # Descrição
 
         Atualiza uma entidade de email para o perfil do usuário atual.
+        Apenas os campos enviados no corpo da requisição são atualizados.
 
         # Erros
 
@@ -860,7 +864,7 @@ async def update_email_to_own_profile(
         environment=environment
     )
 
-    return await perfil_service.update_email_profile_by_guid(
+    return await perfil_service.patch_email_profile_by_guid(
         str(guid_perfil_email),
         perfil_email_input
     )
@@ -995,7 +999,7 @@ async def insert_phone_to_own_profile(
     )
 
 
-@router.put(
+@router.patch(
     "/user/me/perfil-phone/{guid_perfil_phone}",
     tags=["PerfilPhone"],
     response_model=PerfilPhoneOutput,
@@ -1018,7 +1022,7 @@ async def insert_phone_to_own_profile(
 @endpoint_exception_handler
 async def update_phone_own_profile(
     guid_perfil_phone: GUID,
-    perfil_email_input: PerfilPhoneUpdateInput,
+    perfil_email_input: PerfilPhonePatchInput,
     _: usuario_schema.CurrentUserToken = Security(get_current_user, scopes=[]),
     session: AsyncSession = Depends(get_session),
     environment: Environment = Depends(get_environment_cached),
@@ -1028,6 +1032,7 @@ async def update_phone_own_profile(
         # Descrição
 
         Atualiza uma entidade de email para o perfil do usuário atual.
+        Apenas os campos enviados no corpo da requisição são atualizados.
 
         # Erros
 
@@ -1053,7 +1058,7 @@ async def update_phone_own_profile(
         environment=environment
     )
 
-    return await perfil_service.update_phone_profile_by_guid(
+    return await perfil_service.patch_phone_profile_by_guid(
         str(guid_perfil_phone),
         perfil_email_input
     )
