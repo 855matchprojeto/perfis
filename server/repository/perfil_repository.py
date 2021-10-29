@@ -72,6 +72,7 @@ class PerfilRepository:
     def get_all_entities_select_statement():
         stmt = (
             select(Perfil)
+            .distinct()
             .outerjoin(
                 VinculoPerfilCurso,
                 VinculoPerfilCurso.id_perfil == Perfil.id,
@@ -156,9 +157,11 @@ class PerfilRepository:
         if cursor:
             filters.append(PerfilRepository.build_cursor_filter(cursor))
 
-        stmt = PerfilRepository.get_all_entities_select_statement().\
-            where(*filters)\
-            .limit(limit+1).order_by(Perfil.nome_exibicao.asc())
+        stmt = (
+            PerfilRepository.get_all_entities_select_statement()
+        ).where(*filters).limit(limit+1).order_by(
+            Perfil.nome_exibicao.asc()
+        )
 
         # Executando a query
         query = await self.db_session.execute(stmt)
@@ -178,6 +181,7 @@ class PerfilRepository:
         return {
             "items": perfis[:limit],
             "next_cursor": self.encode_cursor(next_cursor) if next_cursor else None,
+            "count": len(perfis[:limit])
         }
 
     async def insere_perfil(self, perfil_dict: dict) -> Perfil:
