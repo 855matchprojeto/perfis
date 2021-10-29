@@ -14,14 +14,14 @@ from typing import Any, Optional, Literal
 
 InterestQuery = Query(
     None,
-    title="Query string para filtrar perfis a partir dos nomes de referência dos interesses listados no perfil do usuário",
-    description="Query string para filtrar perfis a partir dos nomes de referência dos interesses listados no perfil do usuário",
+    title="Query string para filtrar perfis a partir dos IDS dos interesses vinculados ao perfil do usuário",
+    description="Query string para filtrar perfis a partir dos IDS dos interesses vinculados ao perfil do usuário"
 )
 
 CourseQuery = Query(
     None,
-    title="Query string para filtrar perfis a partir dos nomes de referência dos cursos listados no perfil do usuário",
-    description="Query string para filtrar perfis a partir dos nomes de referência dos cursos listados no perfil do usuário",
+    title="Query string para filtrar perfis a partir dos IDS dos cursos vinculados ao perfil do usuário",
+    description="Query string para filtrar perfis a partir dos IDS dos cursos vinculados ao perfil do usuário",
 )
 
 DisplayNameIlikeQuery = Query(
@@ -31,16 +31,59 @@ DisplayNameIlikeQuery = Query(
 )
 
 
+class PerfilPostInput(BaseModel):
+
+    nome_exibicao: Optional[str] = Field(example="Nome de exibição do usuário no perfil")
+    bio: Optional[str] = Field(example='Texto de apresentação do usuário')
+
+    def convert_to_dict(self):
+        return self.dict()
+
+    class Config:
+        orm_mode = True
+        arbitrary_types_allowed = True
+
+
+class PerfilPatchInput(BaseModel):
+
+    nome_exibicao: Optional[str] = Field(example="Nome de exibição do usuário no perfil")
+    bio: Optional[str] = Field(example='Texto de apresentação do usuário')
+
+    def convert_to_dict(self):
+        return self.dict(exclude_unset=True)
+
+    class Config:
+        orm_mode = True
+        arbitrary_types_allowed = True
+
+
+class PerfilPatchOutput(BaseModel):
+
+    """
+        Seria muito custoso mostrar informações de interesses, cursos,
+        emails e telefones toda vez que a requisição de PUT é realizada.
+    """
+
+    guid: GUID = Field(example='44ddad94-94ee-4cdc-bce9-b5b126c9a714')
+    guid_usuario: GUID = Field(example='a4ddad94-94ee-4cdc-bce9-b5b126c9a714')
+    nome_exibicao: Optional[str] = Field(example="Nome de exibição do usuário no perfil")
+    bio: Optional[str] = Field(example='Texto de apresentação do usuário')
+
+    class Config:
+        orm_mode = True
+        arbitrary_types_allowed = True
+
+
 class PerfilOutput(BaseModel):
 
     guid: GUID = Field(example='44ddad94-94ee-4cdc-bce9-b5b126c9a714')
-    guid_usuario: GUID = Field(example='44ddad94-94ee-4cdc-bce9-b5b126c9a714')
+    guid_usuario: GUID = Field(example='a4ddad94-94ee-4cdc-bce9-b5b126c9a714')
     nome_exibicao: Optional[str] = Field(example="Nome de exibição do usuário no perfil")
     bio: Optional[str] = Field(example='Texto de apresentação do usuário')
-    interesses: List[InteresseOutput]
-    cursos: List[CursoOutput]
-    phones: List[PerfilPhoneOutput]
-    emails: List[PerfilEmailOutput]
+    interesses: List[InteresseOutput] = Field([])
+    cursos: List[CursoOutput] = Field([])
+    phones: List[PerfilPhoneOutput] = Field([])
+    emails: List[PerfilEmailOutput] = Field([])
 
     class Config:
         orm_mode = True
