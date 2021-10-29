@@ -8,25 +8,19 @@ from typing import List, Optional
 from server.configuration.environment import Environment
 from sqlalchemy.orm import selectinload
 from sqlalchemy import and_
-from server.models.curso_model import Curso
+from server.models.tipo_contato_model import TipoContato
 
 
-class CursoRepository:
-
-    @staticmethod
-    def get_courses_in_filter(courses: List[int]):
-        return [
-            Curso.id.in_(courses)
-        ]
+class TipoContatoRepository:
 
     def __init__(self, db_session: AsyncSession, environment: Optional[Environment] = None):
         self.db_session = db_session
         self.environment = environment
 
-    async def find_all_courses_by_filters(self, filters) -> List[Curso]:
+    async def find_all_tipos_contato_by_filters(self, filters) -> List[Curso]:
 
         stmt = (
-            select(Curso).
+            select(TipoContato).
             where(
                 *filters
             )
@@ -34,7 +28,7 @@ class CursoRepository:
 
         # Executando a query
         query = await self.db_session.execute(stmt)
-        cursos = query.scalars().unique().all()
+        tipos_contato = query.scalars().unique().all()
 
-        return cursos
+        return tipos_contato
 

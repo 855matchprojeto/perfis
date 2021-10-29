@@ -4,6 +4,7 @@ from typing import Optional
 
 class CursoOutput(BaseModel):
 
+    id: int = Field(example=1)
     nome_exibicao: str = Field(
         example='Esse campo pode ser usado como uma sugestão de nome de exibição nas telas do app'
     )
