@@ -38,7 +38,8 @@ from server.models import (
     perfil_phone_model,
     tipo_contato_model,
     vinculo_perfil_interesse_model,
-    vinculo_perfil_curso_model
+    vinculo_perfil_curso_model,
+    usuario_model
 )
 
 
