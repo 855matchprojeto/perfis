@@ -48,7 +48,7 @@ async def get_current_user(
                 algorithms=[environment.ACCESS_TOKEN_ALGORITHM]
             )
             decoded_token = DecodedAccessToken(**decoded_token_dict)
-        except (JWTError, ValidationError):
+        except (JWTError, ValidationError) as ex:
             raise exceptions.InvalidExpiredTokenException()
 
         permission_repo = PermissaoRepository(session)

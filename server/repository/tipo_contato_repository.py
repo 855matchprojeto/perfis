@@ -1,3 +1,5 @@
+from typing import List, Optional
+from server.models.curso_model import Curso
 from server.configuration.db import AsyncSession
 from server.models.permissao_model import Permissao
 from server.models.vinculo_permissao_funcao_model import VinculoPermissaoFuncao
@@ -6,26 +8,27 @@ from typing import List, Optional
 from server.configuration.environment import Environment
 from sqlalchemy.orm import selectinload
 from sqlalchemy import and_
+from server.models.tipo_contato_model import TipoContato
 
 
-class PermissaoRepository:
+class TipoContatoRepository:
 
     def __init__(self, db_session: AsyncSession, environment: Optional[Environment] = None):
         self.db_session = db_session
         self.environment = environment
 
-    async def find_permissions_by_roles_list(self, roles: List[int]) -> List[Permissao]:
+    async def find_all_tipos_contato_by_filters(self, filters) -> List[Curso]:
+
         stmt = (
-            select(Permissao).
-            join(
-                VinculoPermissaoFuncao,
-                and_(
-                    VinculoPermissaoFuncao.id_permissao == Permissao.id,
-                    VinculoPermissaoFuncao.id_funcao.in_(roles)
-                )
-            ).options(
-                selectinload(Permissao.vinculos_permissao_funcao)
+            select(TipoContato).
+            where(
+                *filters
             )
         )
+
+        # Executando a query
         query = await self.db_session.execute(stmt)
-        return query.scalars().all()
+        tipos_contato = query.scalars().unique().all()
+
+        return tipos_contato
+

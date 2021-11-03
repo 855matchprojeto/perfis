@@ -1,3 +1,5 @@
+from typing import List, Optional
+from server.models.curso_model import Curso
 from server.configuration.db import AsyncSession
 from server.models.permissao_model import Permissao
 from server.models.vinculo_permissao_funcao_model import VinculoPermissaoFuncao
@@ -6,26 +8,33 @@ from typing import List, Optional
 from server.configuration.environment import Environment
 from sqlalchemy.orm import selectinload
 from sqlalchemy import and_
+from server.models.curso_model import Curso
 
 
-class PermissaoRepository:
+class CursoRepository:
+
+    @staticmethod
+    def get_courses_in_filter(courses: List[int]):
+        return [
+            Curso.id.in_(courses)
+        ]
 
     def __init__(self, db_session: AsyncSession, environment: Optional[Environment] = None):
         self.db_session = db_session
         self.environment = environment
 
-    async def find_permissions_by_roles_list(self, roles: List[int]) -> List[Permissao]:
+    async def find_all_courses_by_filters(self, filters) -> List[Curso]:
+
         stmt = (
-            select(Permissao).
-            join(
-                VinculoPermissaoFuncao,
-                and_(
-                    VinculoPermissaoFuncao.id_permissao == Permissao.id,
-                    VinculoPermissaoFuncao.id_funcao.in_(roles)
-                )
-            ).options(
-                selectinload(Permissao.vinculos_permissao_funcao)
+            select(Curso).
+            where(
+                *filters
             )
         )
+
+        # Executando a query
         query = await self.db_session.execute(stmt)
-        return query.scalars().all()
+        cursos = query.scalars().unique().all()
+
+        return cursos
+
