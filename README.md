@@ -22,9 +22,9 @@
 | Caio Lucas Silveira de Sousa                  | 165461                | c165461@dac.unicamp.br                     |   caiolucasw                    |
 | Thomas Gomes Ferreira                  | 224919                | t224919@dac.unicamp.br                     |   Desnord                   |
 
-# LINK DA API ATUAL
 
-https://perfis-match-projetos.herokuapp.com/docs
+## Específico sobre esse repositório: 
+Esse repositório faz parte do projetos da plataforma de Match de Projetos desenvolvido no 2s/2021 para a disciplina MC-855 na Unicamp (https://github.com/orgs/855matchprojeto/repositories). Neste repositório se encontra a implementação do microsserviço de perfis dos usuários para o projeto.
 
 # Visão geral da arquitetura
 
@@ -34,7 +34,7 @@ Ao fazer o login pelo autenticador, o usuário receberá um token de acesso, com
 
 Apesar do microsserviço de autenticação ser responsável pela criação de usuários e suas funções, cada microsserviço implementará seu próprio sistema de permissões, com base nas funções do usuário que fez a requisição. Note que as funções do usuário estarão disponíveis no token de acesso decodificado.
 
-# Descrição
+# Descrição desse repositório
 
 O microserviço de perfis é responsável pela atualização de perfis de um usuário, alterando campos específicos do perfil ou vinculando novas entidades. Foram implementadas as seguintes features:
 
