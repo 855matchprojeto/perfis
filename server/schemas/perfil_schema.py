@@ -35,6 +35,7 @@ class PerfilPostInput(BaseModel):
 
     nome_exibicao: Optional[str] = Field(example="Nome de exibição do usuário no perfil")
     bio: Optional[str] = Field(example='Texto de apresentação do usuário')
+    url_imagem: Optional[str] = Field(example='https://teste.com.br')
 
     def convert_to_dict(self):
         return self.dict()
@@ -48,6 +49,7 @@ class PerfilPatchInput(BaseModel):
 
     nome_exibicao: Optional[str] = Field(example="Nome de exibição do usuário no perfil")
     bio: Optional[str] = Field(example='Texto de apresentação do usuário')
+    url_imagem: Optional[str] = Field(example='https://teste.com.br')
 
     def convert_to_dict(self):
         return self.dict(exclude_unset=True)
@@ -68,6 +70,7 @@ class PerfilPatchOutput(BaseModel):
     guid_usuario: GUID = Field(example='a4ddad94-94ee-4cdc-bce9-b5b126c9a714')
     nome_exibicao: Optional[str] = Field(example="Nome de exibição do usuário no perfil")
     bio: Optional[str] = Field(example='Texto de apresentação do usuário')
+    url_imagem: Optional[str] = Field(example='https://teste.com.br')
 
     class Config:
         orm_mode = True
@@ -80,6 +83,7 @@ class PerfilOutput(BaseModel):
     guid_usuario: GUID = Field(example='a4ddad94-94ee-4cdc-bce9-b5b126c9a714')
     nome_exibicao: Optional[str] = Field(example="Nome de exibição do usuário no perfil")
     bio: Optional[str] = Field(example='Texto de apresentação do usuário')
+    url_imagem: Optional[str] = Field(example='https://teste.com.br')
     interesses: List[InteresseOutput] = Field([])
     cursos: List[CursoOutput] = Field([])
     phones: List[PerfilPhoneOutput] = Field([])

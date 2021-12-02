@@ -27,6 +27,8 @@ class Perfil(db.Base, AuthenticatorBase):
     nome_exibicao = Column(String())
     nome_exibicao_normalized = Column(String())
 
+    url_imagem = Column(String())
+
     emails = relationship(
         "PerfilEmail",
         primaryjoin=(
