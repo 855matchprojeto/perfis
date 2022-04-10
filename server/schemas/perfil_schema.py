@@ -10,6 +10,7 @@ from server.schemas.curso_schema import CursoOutput
 from server.schemas.perfil_phone_schema import PerfilPhoneOutput
 from server.schemas.perfil_email_schema import PerfilEmailOutput
 from typing import Any, Optional, Literal
+from server.schemas.arquivo_schema import ArquivoOutput, ArquivoInput
 
 
 InterestQuery = Query(
@@ -31,50 +32,33 @@ DisplayNameIlikeQuery = Query(
 )
 
 
-class PerfilPostInput(BaseModel):
+class PerfilInput(BaseModel):
 
     nome_exibicao: Optional[str] = Field(example="Nome de exibição do usuário no perfil")
     bio: Optional[str] = Field(example='Texto de apresentação do usuário')
     url_imagem: Optional[str] = Field(example='https://teste.com.br')
+
+    id_imagem_perfil: Optional[int] = Field(example='2')
+    imagem_perfil: Optional[ArquivoInput]
 
     def convert_to_dict(self):
-        return self.dict()
+        _dict = self.dict()
+
+        _dict.pop('imagem_perfil')
+
+        return _dict
 
     class Config:
         orm_mode = True
         arbitrary_types_allowed = True
 
 
-class PerfilPatchInput(BaseModel):
-
-    nome_exibicao: Optional[str] = Field(example="Nome de exibição do usuário no perfil")
-    bio: Optional[str] = Field(example='Texto de apresentação do usuário')
-    url_imagem: Optional[str] = Field(example='https://teste.com.br')
-
-    def convert_to_dict(self):
-        return self.dict(exclude_unset=True)
-
-    class Config:
-        orm_mode = True
-        arbitrary_types_allowed = True
+class PerfilPostInput(PerfilInput):
+    pass
 
 
-class PerfilPatchOutput(BaseModel):
-
-    """
-        Seria muito custoso mostrar informações de interesses, cursos,
-        emails e telefones toda vez que a requisição de PUT é realizada.
-    """
-
-    guid: GUID = Field(example='44ddad94-94ee-4cdc-bce9-b5b126c9a714')
-    guid_usuario: GUID = Field(example='a4ddad94-94ee-4cdc-bce9-b5b126c9a714')
-    nome_exibicao: Optional[str] = Field(example="Nome de exibição do usuário no perfil")
-    bio: Optional[str] = Field(example='Texto de apresentação do usuário')
-    url_imagem: Optional[str] = Field(example='https://teste.com.br')
-
-    class Config:
-        orm_mode = True
-        arbitrary_types_allowed = True
+class PerfilPatchInput(PerfilInput):
+    pass
 
 
 class PerfilOutput(BaseModel):
@@ -88,6 +72,9 @@ class PerfilOutput(BaseModel):
     cursos: List[CursoOutput] = Field([])
     phones: List[PerfilPhoneOutput] = Field([])
     emails: List[PerfilEmailOutput] = Field([])
+
+    id_imagem_perfil: Optional[int] = Field(example='2')
+    imagem_perfil: Optional[ArquivoOutput]
 
     class Config:
         orm_mode = True
