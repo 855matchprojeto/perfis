@@ -98,7 +98,8 @@ class PerfilRepository:
                     selectinload(Perfil.phones).
                     selectinload(PerfilPhone.tipo_contato)
                 ),
-                selectinload(Perfil.emails)
+                selectinload(Perfil.emails),
+                selectinload(Perfil.imagem_perfil)
             )
         )
         return stmt
