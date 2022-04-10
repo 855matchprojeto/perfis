@@ -1,36 +1,24 @@
-from server.configuration.db import AsyncSession
-import re
 from server.configuration import exceptions
-from sqlalchemy import or_, and_
-from passlib.context import CryptContext
-from jose import JWTError, jwt
-from server.schemas.token_shema import DecodedMailToken
-from datetime import timedelta
-from datetime import datetime
+from jose import jwt
 from typing import List, Optional
-from fastapi.security import OAuth2PasswordRequestForm
 from fastapi import Request
-from pydantic import ValidationError, EmailStr
-from server.templates import jinja2_templates
 from server.configuration.environment import Environment
-from server.schemas.usuario_schema import CurrentUserOutput, CurrentUserToken
-from functools import lru_cache
-from server.services import insert_filter, get_filters_base
+from server.schemas.usuario_schema import CurrentUserToken
 from server.repository.perfil_repository import PerfilRepository
 from server.repository.interesse_repository import InteresseRepository
 from server.repository.curso_repository import CursoRepository
 from server.schemas.cursor_schema import Cursor
 from server.models.perfil_model import Perfil
 from server import utils
-from server.schemas.perfil_schema import PerfilPostInput, PerfilPatchInput, PerfilPatchOutput
+from server.schemas.perfil_schema import PerfilInput, PerfilPostInput, PerfilPatchInput
 from server.models.curso_model import Curso
 from server.models.interesse_model import Interesse
-from server.schemas.perfil_email_schema import PerfilEmailOutput, PerfilEmailPostInput, \
-    PerfilEmailPatchInput
-from server.models.perfil_email_model import PerfilEmail
-from server.schemas.perfil_phone_schema import PerfilPhoneOutput, PerfilPhonePostInput, PerfilPhonePatchInput
+from server.schemas.perfil_email_schema import PerfilEmailPostInput, PerfilEmailPatchInput
+from server.schemas.perfil_phone_schema import PerfilPhonePostInput, PerfilPhonePatchInput
 from server.repository.tipo_contato_repository import TipoContatoRepository
 from server.models.tipo_contato_model import TipoContato
+from server.services.arquivo_service import ArquivoService
+from server.models.arquivo_model import Arquivo
 
 
 class PerfilService:
@@ -112,13 +100,15 @@ class PerfilService:
         curso_repo: Optional[CursoRepository] = None,
         interesse_repo: Optional[InteresseRepository] = None,
         tipo_contato_repo: Optional[TipoContatoRepository] = None,
-        environment: Optional[Environment] = None
+        environment: Optional[Environment] = None,
+        arquivo_service: Optional[ArquivoService] = None
     ):
         self.perfil_repo = perfil_repo
         self.curso_repo = curso_repo
         self.interesse_repo = interesse_repo
         self.tipo_contato_repo =tipo_contato_repo
         self.environment = environment
+        self.arquivo_service = arquivo_service
 
     def decode_cursor_info(self, encoded_cursor: str):
         decoded_cursor_dict = jwt.decode(
@@ -160,19 +150,19 @@ class PerfilService:
 
         return paginated_profile_dict
 
-    async def create_profile_by_guid_usuario(self, guid_usuario: str, profile_input: PerfilPostInput):
+    async def create_profile_by_guid_usuario(self, current_user: CurrentUserToken, profile_input: PerfilPostInput):
         # Verificando se ja existe um perfil para o usuário
         perfil_db = await self.perfil_repo.find_profile_by_guid_usuario(
-            guid_usuario,
+            current_user.guid,
             load_all_entities=False
         )
         if perfil_db:
             raise exceptions.ProfileConflictException(
-                detail=f"Já existe um perfil cadastrado para o usuário {guid_usuario}"
+                detail=f"Já existe um perfil cadastrado para o usuário {current_user.guid}"
             )
         # Lógica padrão do endpoint de inserção de perfil
         profile_dict = profile_input.convert_to_dict()
-        profile_dict['guid_usuario'] = guid_usuario
+        profile_dict['guid_usuario'] = current_user.guid
         # Preenchendo nome exibição e normalizacao se existir
         nome_exibicao = profile_dict.get('nome_exibicao')
         profile_dict['nome_exibicao_normalized'] = (
@@ -182,8 +172,30 @@ class PerfilService:
         )
         return await self.perfil_repo.insere_perfil(profile_dict)
 
-    async def patch_profile_by_guid_usuario(self, guid_usuario: str, profile_input: PerfilPatchInput):
+    async def handle_input_imagem_perfil(
+        self, current_user: CurrentUserToken, profile_input: PerfilInput
+    ) -> Optional[Arquivo]:
+        """
+            Cria o arquivo da imagem de perfil do usuario e vincula
+            o id do arquivo criado no input
+        """
+
+        imagem_perfil_input = profile_input.imagem_perfil
+        if imagem_perfil_input:
+            imagem_perfil = await self.arquivo_service.upload_arquivo(imagem_perfil_input, current_user)
+
+            profile_input.id_imagem_perfil = imagem_perfil.id
+            profile_input.imagem_perfil = None
+
+            return imagem_perfil
+
+        return None
+
+    async def patch_profile_by_guid_usuario(self, current_user: CurrentUserToken, profile_input: PerfilPatchInput):
+        await self.handle_input_imagem_perfil(current_user, profile_input)
+
         profile_dict = profile_input.convert_to_dict()
+
         # Preenchendo nome exibição e normalizacao se existir
         nome_exibicao = profile_dict.get('nome_exibicao')
         profile_dict['nome_exibicao_normalized'] = (
@@ -191,7 +203,9 @@ class PerfilService:
             if nome_exibicao
             else None
         )
-        return await self.perfil_repo.atualiza_perfil_by_guid_usuario(guid_usuario, profile_dict)
+
+        await self.perfil_repo.atualiza_perfil_by_guid_usuario(current_user.guid, profile_dict)
+        return await self.perfil_repo.find_profile_by_guid_usuario(current_user.guid)
 
     async def delete_profile_by_guid_usuario(self, guid_usuario: str):
         # Verificando se existe um usuario no banco

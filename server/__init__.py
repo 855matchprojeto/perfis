@@ -6,6 +6,7 @@ from server.controllers.perfil_controller import perfil_router
 from server.controllers.curso_controller import curso_router
 from server.controllers.interesse_controller import interesse_router
 from server.controllers.tipo_contato_controller import tipo_contato_router
+from server.controllers.arquivo_controller import arquivo_router
 from starlette_context.middleware import RawContextMiddleware
 from starlette_context import plugins
 from server.configuration.custom_logging import MICROSERVICE_LOGGER_KWARGS, Logger
@@ -21,7 +22,8 @@ routers = [
     perfil_router,
     curso_router,
     interesse_router,
-    tipo_contato_router
+    tipo_contato_router,
+    arquivo_router
 ]
 
 

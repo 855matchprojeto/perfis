@@ -17,14 +17,19 @@ from server.configuration.environment import Environment
 from server.repository.perfil_repository import PerfilRepository
 from server.repository.curso_repository import CursoRepository
 from server.repository.interesse_repository import InteresseRepository
-from server.schemas.perfil_schema import PaginatedPerfilOutput, PerfilOutput, PerfilPostInput, \
-    PerfilPatchInput, PerfilPatchOutput
+from server.schemas.perfil_schema import (
+    PaginatedPerfilOutput, PerfilOutput, PerfilPostInput, PerfilPatchInput
+)
 from fastapi import Request, status
 from uuid import UUID as GUID
 from server.models.perfil_email_model import PerfilEmail
 from server.schemas.perfil_email_schema import PerfilEmailPatchInput, PerfilEmailOutput, PerfilEmailPostInput
 from server.schemas.perfil_phone_schema import PerfilPhoneOutput, PerfilPhonePatchInput, PerfilPhonePostInput
 from server.repository.tipo_contato_repository import TipoContatoRepository
+from server.services.file_uploader.uploader import FileUploaderService
+from server.dependencies.get_s3_file_uploader_service import get_s3_file_uploader_service
+from server.repository.arquivo_repository import ArquivoRepository
+from server.services.arquivo_service import ArquivoService
 
 
 async def all_profiles_query_params(
@@ -308,12 +313,16 @@ async def post_own_profile(
     current_user: usuario_schema.CurrentUserToken = Security(get_current_user, scopes=[]),
     session: AsyncSession = Depends(get_session),
     environment: Environment = Depends(get_environment_cached),
+    file_uploader_service: FileUploaderService = Depends(get_s3_file_uploader_service)
 ):
 
     """
         # Descrição
 
         Cria o perfil do usuário atual a partir dos campos definidos no corpo da requisição
+
+        É possível fazer upload de imagem de perfil nesse endpoint, a partir do campo
+        'imagem_perfil'
 
         # Erros
 
@@ -327,25 +336,29 @@ async def post_own_profile(
 
     """
 
+    arquivo_service = ArquivoService(
+        arquivo_repo=ArquivoRepository(session, environment),
+        environment=environment,
+        file_uploader_service=file_uploader_service
+    )
+
     perfil_service = PerfilService(
         perfil_repo=PerfilRepository(
             db_session=session,
             environment=environment
         ),
-        environment=environment
+        environment=environment,
+        arquivo_service=arquivo_service
     )
 
-    guid_usuario = current_user.guid
-
-    return await perfil_service.create_profile_by_guid_usuario(guid_usuario, perfil_input)
+    return await perfil_service.create_profile_by_guid_usuario(current_user, perfil_input)
 
 
 @router.patch(
     "/user/me",
-    response_model=PerfilPatchOutput,
+    response_model=PerfilOutput,
     summary='Atualiza o perfil do usuário atual.',
-    response_description='O perfil é atualizado e são retornadas as informações atualizadas. '
-    'Note que algumas informações não são retornadas, como os vínculos com as demais entidades',
+    response_description='O perfil é atualizado e são retornadas as informações atualizadas',
     responses={
         401: {
             'model': error_schema.ErrorOutput401,
@@ -367,6 +380,7 @@ async def patch_own_profile(
     current_user: usuario_schema.CurrentUserToken = Security(get_current_user, scopes=[]),
     session: AsyncSession = Depends(get_session),
     environment: Environment = Depends(get_environment_cached),
+    file_uploader_service: FileUploaderService = Depends(get_s3_file_uploader_service)
 ):
 
     """
@@ -376,7 +390,8 @@ async def patch_own_profile(
 
         Apenas os campos enviados no corpo da requisição são atualizados.
 
-        Note que a resposta é mais "enxuta" e não retorna os vínculos com as outras entidades.
+        É possível fazer upload de imagem de perfil nesse endpoint, a partir do campo
+        'imagem_perfil'
 
         # Erros
 
@@ -390,17 +405,22 @@ async def patch_own_profile(
 
     """
 
+    arquivo_service = ArquivoService(
+        arquivo_repo=ArquivoRepository(session, environment),
+        environment=environment,
+        file_uploader_service=file_uploader_service
+    )
+
     perfil_service = PerfilService(
         perfil_repo=PerfilRepository(
             db_session=session,
             environment=environment
         ),
-        environment=environment
+        environment=environment,
+        arquivo_service=arquivo_service
     )
 
-    guid_usuario = current_user.guid
-
-    return await perfil_service.patch_profile_by_guid_usuario(guid_usuario, perfil_input)
+    return await perfil_service.patch_profile_by_guid_usuario(current_user, perfil_input)
 
 
 @router.delete(
@@ -432,8 +452,7 @@ async def delete_profile(
     """
         # Descrição
 
-        Atualiza o perfil do usuário a partir dos campos definidos no corpo da requisição.
-        Note que a respostas é mais "enxuta" e não retorna os vínculos com as outras entidades.
+        Deleta o perfil do usuario
 
         # Erros
 
