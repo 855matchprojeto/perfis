@@ -505,9 +505,19 @@ class PerfilService:
         self, perfil_input: NotOwnerPerfilPostInput,
         usuario_input: UsuarioPostInput
     ):
+        profile_dict = perfil_input.dict(exclude_unset=True)
+
+        # Preenchendo nome exibição e normalizacao se existir
+        nome_exibicao = profile_dict.get('nome_exibicao')
+        profile_dict['nome_exibicao_normalized'] = (
+            utils.normalize_string(nome_exibicao)
+            if nome_exibicao
+            else None
+        )
+
         await self.usuario_repo.insere_usuario(usuario_input.dict())
 
-        perfil = await self.perfil_repo.insere_perfil(perfil_input.dict(exclude_unset=True))
+        perfil = await self.perfil_repo.insere_perfil(profile_dict)
 
         return await self.perfil_repo.find_profile_by_guid(perfil.guid)
 
