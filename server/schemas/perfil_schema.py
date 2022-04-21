@@ -61,6 +61,31 @@ class PerfilPatchInput(PerfilInput):
     pass
 
 
+class NotOwnerPerfilPostInput(PerfilInput):
+
+    guid_usuario: GUID
+
+
+class UsuarioPostInput(BaseModel):
+
+    guid: GUID
+    nome: str = Field(None, example='Teste')
+    username: str = Field(None, example='username')
+    email: EmailStr = Field(None, example="teste@unicamp.br")
+    email_verificado: bool = Field(None)
+    created_at: datetime = Field(None)
+    updated_at: datetime = Field(None)
+
+
+class PerfilUsuarioPostInput(BaseModel):
+    """
+    Inserção de usuário e perfil
+    """
+
+    user: UsuarioPostInput
+    profile: NotOwnerPerfilPostInput
+
+
 class PerfilOutput(BaseModel):
 
     guid: GUID = Field(example='44ddad94-94ee-4cdc-bce9-b5b126c9a714')

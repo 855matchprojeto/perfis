@@ -1,12 +1,10 @@
-from server.schemas import usuario_schema, token_shema
-from fastapi import APIRouter, Request, Response
-from server.services.usuario_service import UsuarioService
+from server.schemas import usuario_schema
+from fastapi import APIRouter, Response
 from server.dependencies.session import get_session
 from server.dependencies.get_environment_cached import get_environment_cached
 from server.configuration.db import AsyncSession
-from fastapi import Depends, Security, Query
+from fastapi import Depends, Security
 from server.controllers import endpoint_exception_handler
-from fastapi.security import OAuth2PasswordRequestForm
 from typing import List, Optional
 from server.dependencies.get_current_user import get_current_user
 from server.schemas import error_schema
@@ -18,11 +16,11 @@ from server.repository.perfil_repository import PerfilRepository
 from server.repository.curso_repository import CursoRepository
 from server.repository.interesse_repository import InteresseRepository
 from server.schemas.perfil_schema import (
-    PaginatedPerfilOutput, PerfilOutput, PerfilPostInput, PerfilPatchInput
+    PaginatedPerfilOutput, PerfilOutput, PerfilPostInput,
+    PerfilPatchInput, PerfilUsuarioPostInput
 )
 from fastapi import Request, status
 from uuid import UUID as GUID
-from server.models.perfil_email_model import PerfilEmail
 from server.schemas.perfil_email_schema import PerfilEmailPatchInput, PerfilEmailOutput, PerfilEmailPostInput
 from server.schemas.perfil_phone_schema import PerfilPhoneOutput, PerfilPhonePatchInput, PerfilPhonePostInput
 from server.repository.tipo_contato_repository import TipoContatoRepository
@@ -30,6 +28,8 @@ from server.services.file_uploader.uploader import FileUploaderService
 from server.dependencies.get_s3_file_uploader_service import get_s3_file_uploader_service
 from server.repository.arquivo_repository import ArquivoRepository
 from server.services.arquivo_service import ArquivoService
+from server.constants.permission import RoleBasedPermission
+from server.repository.usuario_repository import UsuarioRepository
 
 
 async def all_profiles_query_params(
@@ -115,6 +115,69 @@ async def get_all_profiles(
 
     return await perfil_service.get_all_profiles_paginated(
         filter_params_dict, request, limit, offset
+    )
+
+
+@router.post(
+    "",
+    response_model=PerfilOutput,
+    summary='Cria um perfil e um usuário na tabela de usuário (neste microserviço)',
+    response_description='Cria um perfil e um usuário na tabela de usuário (neste microserviço)',
+    include_in_schema=False,
+    responses={
+        401: {
+            'model': error_schema.ErrorOutput401,
+        },
+        422: {
+            'model': error_schema.ErrorOutput422,
+        },
+        500: {
+            'model': error_schema.ErrorOutput500
+        }
+    }
+)
+@endpoint_exception_handler
+async def insert_profile(
+    perfil_usuario_input: PerfilUsuarioPostInput,
+    _: usuario_schema.CurrentUserToken = Security(
+        get_current_user, scopes=[RoleBasedPermission.ANY_OP.value]),
+    session: AsyncSession = Depends(get_session),
+    environment: Environment = Depends(get_environment_cached),
+):
+
+    """
+        # Descrição
+
+        Insere um perfil para um usuário. Apenas usuários com cargos com permissão
+        'ANY_OP' (Qualquer operação) possuem a autorização para acessar essa requisiçõo.
+
+        Também cria um objeto na tabela tb_usuario (Cópia da tabela de usuários do autenticador)
+
+        # Erros
+
+        Segue a lista de erros, por (**error_id**, **status_code**), que podem ocorrer nesse endpoint:
+
+        - **(INVALID_OR_EXPIRED_TOKEN, 401)**: Token de acesso inválido ou expirado.
+        - **(REQUEST_VALIDATION_ERROR, 422)**: Validação padrão da requisição. O detalhamento é um JSON,
+        no formato de string, contendo os erros de validação encontrados.
+        - **(INTERNAL_SERVER_ERROR, 500)**: Erro interno no sistema
+
+    """
+
+    perfil_service = PerfilService(
+        usuario_repo=UsuarioRepository(
+            db_session=session,
+            environment=environment
+        ),
+        perfil_repo=PerfilRepository(
+            db_session=session,
+            environment=environment
+        ),
+        environment=environment
+    )
+
+    return await perfil_service.insert_profile(
+        perfil_usuario_input.profile, perfil_usuario_input.user
     )
 
 
