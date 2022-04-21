@@ -1,7 +1,5 @@
 name: Fluxo de integração contínua
 
-# Controls when the action will run. Triggers the workflow on push or pull request
-# events but only for the master branch
 on:
   push:
     branches:
@@ -12,7 +10,7 @@ on:
         - develop
 
 jobs:
-  build:
+  tests:
     runs-on: ubuntu-latest
 
     steps:
@@ -38,18 +36,18 @@ jobs:
         env:
           AUTHENTICATOR_DNS: ./token
 
-#      - name: Run integration tests
-#        run: pytest server/tests/integration --cov-config=.github/workflows/integration.coveragerc --cov=server --cov-report term-missing
-#        env:
-#          AUTHENTICATOR_DNS: ./token
-#          TEST_DB_HOST: localhost
-#          TEST_DB_USER: postgres
-#          TEST_DB_PASS: 1234
-#          TEST_DB_NAME: postgres
-#          TEST_DB_PORT: 5432
-#          MIGRATION_DB_HOST: localhost
-#          MIGRATION_DB_USER: postgres
-#          MIGRATION_DB_PASS: 1234
-#          MIGRATION_DB_NAME: postgres
-#          MIGRATION_DB_PORT: 5432
+  build:
+    needs: tests
+
+    runs-on: ubuntu-latest
+
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: akhileshns/heroku-deploy@v3.12.12 # This is the action
+        with:
+          heroku_api_key: ${{secrets.HEROKU_API_KEY}}
+          heroku_app_name: ${{secrets.HEROKU_APP_NAME}}
+          heroku_email: ${{secrets.HEROKU_EMAIL}}
 
