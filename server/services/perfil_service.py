@@ -84,10 +84,12 @@ class PerfilService:
         paginated_profile_dict: dict, previous_encoded_cursor: str, request: Request
     ):
         next_encoded_cursor = paginated_profile_dict['next_cursor']
+
         paginated_profile_dict['items'] = PerfilService.handle_profile_body_list(paginated_profile_dict['items'])
         paginated_profile_dict['previous_cursor'] = previous_encoded_cursor
         paginated_profile_dict['previous_url'] = PerfilService.get_previous_url(request)
         paginated_profile_dict['next_url'] = PerfilService.get_next_url(request, request.url.path, next_encoded_cursor)
+
         return paginated_profile_dict
 
     @staticmethod
@@ -145,12 +147,13 @@ class PerfilService:
     ):
         filters = PerfilService.get_filters_by_params(filter_params_dict)
         decoded_cursor = self.decode_cursor_info(cursor) if cursor else None
+        previous_encoded_cursor = decoded_cursor.previous_encoded_cursor if decoded_cursor else None
 
         paginated_profile_dict = await self.perfil_repo.\
-            find_profiles_by_filters_paginated(limit, decoded_cursor, filters)
+            find_profiles_by_filters_paginated(limit, cursor, decoded_cursor, filters)
 
         paginated_profile_dict = PerfilService.handle_profile_pagination(
-            paginated_profile_dict, cursor, request
+            paginated_profile_dict, previous_encoded_cursor, request
         )
 
         return paginated_profile_dict
