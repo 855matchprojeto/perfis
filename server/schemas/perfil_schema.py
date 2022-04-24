@@ -111,6 +111,7 @@ class PaginatedPerfilOutput(PerfilModelOutput):
     items: List[PerfilOutput]
     count: Optional[int] = Field(example='10')
     previous_cursor: Optional[str] = Field(example='previous_cursor_token')
+    current_cursor: Optional[str] = Field(example='current_cursor_token')
     next_cursor: Optional[str] = Field(example='next_cursor_token')
     previous_url: Optional[str] = Field(example='http://localhost/profiles/?page_size=10&cursor=previous_cursor_token')
     next_url: Optional[str] = Field(example='http://localhost/profiles/?page_size=10&cursor=next_cursor_token')

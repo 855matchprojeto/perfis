@@ -186,6 +186,7 @@ class PerfilRepository:
 
         return {
             "items": perfis[:limit],
+            "current_cursor": encoded_cursor,
             "next_cursor": self.encode_cursor(next_cursor) if next_cursor else None,
             "count": len(perfis[:limit])
         }
