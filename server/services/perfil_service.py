@@ -194,7 +194,7 @@ class PerfilService:
     async def patch_profile_by_guid_usuario(self, current_user: CurrentUserToken, profile_input: PerfilPatchInput):
         await self.handle_input_imagem_perfil(current_user, profile_input)
 
-        profile_dict = profile_input.convert_to_dict()
+        profile_dict = profile_input.convert_to_dict(exclude_unset=True)
 
         # Preenchendo nome exibição e normalizacao se existir
         nome_exibicao = profile_dict.get('nome_exibicao')

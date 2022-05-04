@@ -41,10 +41,10 @@ class PerfilInput(BaseModel):
     id_imagem_perfil: Optional[int] = Field(example='2')
     imagem_perfil: Optional[ArquivoInput]
 
-    def convert_to_dict(self):
-        _dict = self.dict()
+    def convert_to_dict(self, exclude_unset=False):
+        _dict = self.dict(exclude_unset=exclude_unset)
 
-        _dict.pop('imagem_perfil')
+        _dict.pop('imagem_perfil', None)
 
         return _dict
 
