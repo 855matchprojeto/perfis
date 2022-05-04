@@ -3,11 +3,10 @@
 """
 
 
-class RoleBasedPermission:
+from enum import Enum
 
-    pass
-    # READ_ALL_USERS = {
-    #     'name': 'READ_ALL_USERS',
-    #     'description': 'Capacidade de visualizar todos os usuários do sistema'
-    # }
+
+class RoleBasedPermission(Enum):
+
+    ANY_OP = 'ANY_OP'
 

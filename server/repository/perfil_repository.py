@@ -151,12 +151,15 @@ class PerfilRepository:
         perfil = query.scalars().unique().first()
         return perfil
 
-    async def find_profiles_by_filters_paginated(self, limit, cursor: Cursor, filters) -> dict:
+    async def find_profiles_by_filters_paginated(
+        self, limit, encoded_cursor: str, cursor: Cursor, filters
+    ) -> dict:
 
         # Offset a partir do cursor, geralmente é pelo ID
         # Limit + 1 para capturar o ultimo perfil. Esse último perfil será usado no cursor
         if cursor:
             filters.append(PerfilRepository.build_cursor_filter(cursor))
+            filters.append(Perfil.id != cursor.id)
 
         stmt = (
             PerfilRepository.get_all_entities_select_statement()
@@ -171,16 +174,19 @@ class PerfilRepository:
         # Capturando o ultimo perfil e setando o next_cursor
         next_cursor = None
         if len(perfis) == (limit+1):
-            last_profile = perfis[limit]
+            last_profile: Perfil = perfis[limit]
             next_cursor = {
+                'previous_encoded_cursor': encoded_cursor,
                 'sort_field_key': cursor.sort_field_key if cursor else 'nome_exibicao',
                 'sort_field_type': cursor.sort_field_type if cursor else 'str',
                 'operator': 'ge',
-                'value': last_profile.nome_exibicao
+                'value': last_profile.nome_exibicao,
+                'id': last_profile.id
             }
 
         return {
             "items": perfis[:limit],
+            "current_cursor": encoded_cursor,
             "next_cursor": self.encode_cursor(next_cursor) if next_cursor else None,
             "count": len(perfis[:limit])
         }

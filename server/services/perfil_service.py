@@ -10,7 +10,7 @@ from server.repository.curso_repository import CursoRepository
 from server.schemas.cursor_schema import Cursor
 from server.models.perfil_model import Perfil
 from server import utils
-from server.schemas.perfil_schema import PerfilInput, PerfilPostInput, PerfilPatchInput
+from server.schemas.perfil_schema import PerfilInput, PerfilPostInput, PerfilPatchInput, NotOwnerPerfilPostInput
 from server.models.curso_model import Curso
 from server.models.interesse_model import Interesse
 from server.schemas.perfil_email_schema import PerfilEmailPostInput, PerfilEmailPatchInput
@@ -19,6 +19,8 @@ from server.repository.tipo_contato_repository import TipoContatoRepository
 from server.models.tipo_contato_model import TipoContato
 from server.services.arquivo_service import ArquivoService
 from server.models.arquivo_model import Arquivo
+from server.schemas.perfil_schema import UsuarioPostInput
+from server.repository.usuario_repository import UsuarioRepository
 
 
 class PerfilService:
@@ -82,10 +84,12 @@ class PerfilService:
         paginated_profile_dict: dict, previous_encoded_cursor: str, request: Request
     ):
         next_encoded_cursor = paginated_profile_dict['next_cursor']
+
         paginated_profile_dict['items'] = PerfilService.handle_profile_body_list(paginated_profile_dict['items'])
         paginated_profile_dict['previous_cursor'] = previous_encoded_cursor
         paginated_profile_dict['previous_url'] = PerfilService.get_previous_url(request)
         paginated_profile_dict['next_url'] = PerfilService.get_next_url(request, request.url.path, next_encoded_cursor)
+
         return paginated_profile_dict
 
     @staticmethod
@@ -100,13 +104,16 @@ class PerfilService:
         curso_repo: Optional[CursoRepository] = None,
         interesse_repo: Optional[InteresseRepository] = None,
         tipo_contato_repo: Optional[TipoContatoRepository] = None,
+        usuario_repo: Optional[UsuarioRepository] = None,
         environment: Optional[Environment] = None,
         arquivo_service: Optional[ArquivoService] = None
     ):
         self.perfil_repo = perfil_repo
         self.curso_repo = curso_repo
         self.interesse_repo = interesse_repo
-        self.tipo_contato_repo =tipo_contato_repo
+        self.tipo_contato_repo = tipo_contato_repo
+        self.usuario_repo = usuario_repo
+
         self.environment = environment
         self.arquivo_service = arquivo_service
 
@@ -140,12 +147,13 @@ class PerfilService:
     ):
         filters = PerfilService.get_filters_by_params(filter_params_dict)
         decoded_cursor = self.decode_cursor_info(cursor) if cursor else None
+        previous_encoded_cursor = decoded_cursor.previous_encoded_cursor if decoded_cursor else None
 
         paginated_profile_dict = await self.perfil_repo.\
-            find_profiles_by_filters_paginated(limit, decoded_cursor, filters)
+            find_profiles_by_filters_paginated(limit, cursor, decoded_cursor, filters)
 
         paginated_profile_dict = PerfilService.handle_profile_pagination(
-            paginated_profile_dict, cursor, request
+            paginated_profile_dict, previous_encoded_cursor, request
         )
 
         return paginated_profile_dict
@@ -495,4 +503,24 @@ class PerfilService:
         return await self.perfil_repo.delete_phone_profile(
             guid_perfil_phone,
         )
+
+    async def insert_profile(
+        self, perfil_input: NotOwnerPerfilPostInput,
+        usuario_input: UsuarioPostInput
+    ):
+        profile_dict = perfil_input.dict(exclude_unset=True)
+
+        # Preenchendo nome exibição e normalizacao se existir
+        nome_exibicao = profile_dict.get('nome_exibicao')
+        profile_dict['nome_exibicao_normalized'] = (
+            utils.normalize_string(nome_exibicao)
+            if nome_exibicao
+            else None
+        )
+
+        await self.usuario_repo.insere_usuario(usuario_input.dict())
+
+        perfil = await self.perfil_repo.insere_perfil(profile_dict)
+
+        return await self.perfil_repo.find_profile_by_guid(perfil.guid)
 
